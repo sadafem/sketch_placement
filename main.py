@@ -3,6 +3,7 @@ import networkx as nx
 from elements import *
 import matplotlib.pyplot as plt
 from opt import *
+from traffic_gen import *
 
 class FatTreeTopo():
     def __init__(self, k, G):
@@ -18,7 +19,7 @@ class FatTreeTopo():
         hosts_per_sw = k // 2
         num_sws = num_core + num_agg + num_edge
         
-        print('Create a fattree topology with {} switches'.format(num_sws))
+        print('Create a fattree topology with {} switches'.format(num_sws)) 
 
         dpid_counter = 1
         cores = []
@@ -44,7 +45,7 @@ class FatTreeTopo():
                 dpid_counter += 1
             a_pod = (aggs, edges)
             pods.append(a_pod)
-
+        
         # Add hosts to switches
         pods_cpy = pods[:]
         host_i = 0
@@ -81,20 +82,30 @@ def mytest():
     G = nx.Graph()
     FatTreeTopo(4,G)
     for node in G.nodes():
+        #print(node.name)
+        #print(node.M)
         if "h" in node.name:
             hosts.append(node)
-            #print(node.name)
+            
     ods = []
     for i in range(OD_NUM):
         od_path = []
         ns = np.random.choice(hosts, size=2, replace=False)
+        #print(ns[0].name, ns[1].name)
         pt = nx.shortest_path(G, ns[0], ns[1])
         for pp in pt:
+            #print(pp.name)
             od_path.append(pp)
+        nhost = 16
+        load = 0.3
+        time = 0.1
+        traffic_gen(nhost, load, time)
+
         sketch = Sketch(0.05, 0.01) #epsilon and delta
         od = OdSketch(od_path, sketch)     #we should assign a sketch to an od pair
         ods.append(od)
-        place_sketch(G.nodes(), ods)
+        print(od.sketch.Q)
+        #place_sketch(G.nodes(), ods)
         
     # print(G.nodes())
     # nx.draw(G)

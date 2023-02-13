@@ -1,9 +1,26 @@
-import gurobipy as gp
-from gurobipy import GRB
+#import gurobipy as gp
+#from gurobipy import GRB
 import numpy as np
 
-def place_sketch(all_nodes, ods):
+def place_sketch(all_nodes, od):
+        #tr = TestResult()
+        best_d = None
+        for d in od.od_path:
+            if d.mem_avail() >= od.Q:
+                if best_d is None or d.M - d.mem_avail() < best_d.M - best_d.mem_avail():
+                    best_d = d
+        if best_d is not None:
+            best_d.place_sketch(od, od.Q)
+ 
+                #tr.admit_num = 1
+                #tr.mem_usage.append(best_d.M - best_d.mem_avail())
+                #tr.max_mem = best_d.M - best_d.mem_avail()
 
+        #return tr
+
+
+
+'''
     num_of_ods = len(ods)
     num_of_nodes = len(all_nodes)
     w_id = dict(zip(all_nodes, range(len(all_nodes))))
@@ -37,6 +54,6 @@ def place_sketch(all_nodes, ods):
             for w in range(num_of_nodes)
         ), name="memory_constraint"
     )
-
+'''
     
 

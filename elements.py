@@ -1,4 +1,3 @@
-from sqlalchemy import Column
 from constants import Const
 import math
 
@@ -9,10 +8,21 @@ class Switch:
         self.M = Const.SW_MEM
         self.sketches = dict()
 
+    def mem_available(self):
+        a = self.M
+        for s in self.sketches:
+            a = a - s.Q
+        return a        
+    
+    def place_sketch(self, od):
+        self.sketches[od] = od.Q
+
+
 class Host:
     def __init__(self, name):
         self.name = name
         self.M = Const.H_MEM
+        self.sketches = dict()
 
 
 class Sketch:
