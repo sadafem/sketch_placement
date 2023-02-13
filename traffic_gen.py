@@ -3,12 +3,13 @@ import random
 import math
 from optparse import OptionParser
 from custom_rand import CustomRand
+import heapq
 
 class Flow:
 	def __init__(self, src, dst, size, t):
 		self.src, self.dst, self.size, self.t = src, dst, size, t
 	def __str__(self):
-		return "%d,%d,%d,%.9f"%(self.src, self.dst, self.size, self.t)
+		return("%d %d %d %.9f"%(self.src, self.dst, self.size, self.t))
 
 def translate_bandwidth(b):
 	if b == None:
@@ -69,29 +70,29 @@ def traffic_gen(nhost, load, time):
 	avg_inter_arrival = 1/(bandwidth*load/8./avg)*1000000000
 	print(avg_inter_arrival)
 	for i in range(nhost):
-		for dst in range(nhost):
-			if i != dst:
-				t = base_t
-				#while True:
-				inter_t = int(poisson(avg_inter_arrival))
-				t += inter_t
-				#dst = random.randint(0, nhost-1)
-				#while (dst == i):
-					#dst = random.randint(0, nhost-1)
-				#if (t > time + base_t):
-				#	break
-				size = int(customRand.rand())
-				if size <= 0:
-					size = 1
-				f_list.append(Flow(i, dst, size, t * 1e-9))
-				epsilon = 1000/size
-				width = math.ceil(math.e/epsilon)
-				num_of_regs = 3
-				print("epsilon:", epsilon)
-				print("sketch width:", width)
-				print("sketch size:", width*num_of_regs)
+		t = base_t
+		while True:
+			inter_t = int(poisson(avg_inter_arrival))
+			t += inter_t
+			dst = random.randint(0, nhost-1)
+			while (dst == i):
+				dst = random.randint(0, nhost-1)
+			if (t > time + base_t):
+				break
+			size = int(customRand.rand())
+			if size <= 0:
+				size = 1
 
-	#f_list.sort(key = lambda x: x.t)
+			f_list.append(Flow(i, dst, size, t * 1e-9))
+			abs_err = 1000
+			epsilon = abs_err/size
+			width = math.ceil(math.e/epsilon)
+			num_of_regs = 3
+			print("epsilon", epsilon)
+			print("sketch width", width)
+			print("sketch size", width*num_of_regs)
+
+	f_list.sort(key = lambda x: x.t)
 
 	print(len(f_list))
 	for f in f_list:
