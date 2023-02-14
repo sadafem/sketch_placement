@@ -82,8 +82,9 @@ def traffic_gen(nhost, load, time):
 			size = int(customRand.rand())
 			if size <= 0:
 				size = 1
-
+			flows = []
 			f_list.append(Flow(i, dst, size, t * 1e-9))
+			heapq.heappush(flows, (i, dst, size, t * 1e-9))
 			abs_err = 1000
 			epsilon = abs_err/size
 			width = math.ceil(math.e/epsilon)
