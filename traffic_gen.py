@@ -89,12 +89,13 @@ def traffic_gen(nhost, load, time):
 			epsilon = abs_err/size
 			width = math.ceil(math.e/epsilon)
 			num_of_regs = 3
-			print("epsilon", epsilon)
-			print("sketch width", width)
-			print("sketch size", width*num_of_regs)
+			#print("epsilon", epsilon)
+			#print("sketch width", width)
+			#print("sketch size", width*num_of_regs)
 
 	f_list.sort(key = lambda x: x.t)
 
-	print(len(f_list))
-	for f in f_list:
-		print(f)
+	#print(len(f_list))
+	#for f in f_list:
+		#print(f)
+	return f_list

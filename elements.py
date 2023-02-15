@@ -31,10 +31,11 @@ class Sketch:
         R = math.log(math.e/epsilon)
         self.Q = C * R
 
-class OdSketch:
-    def __init__(self, od_path, sketch):
+class OD:
+    def __init__(self, od_path, flowsize):
         self.od_path = od_path
-        self.sketch = sketch
-        self.Q = self.sketch.Q
+        self.flowsize = flowsize
+        #self.sketch = sketch
+        #self.Q = self.sketch.Q
 
         

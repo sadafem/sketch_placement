@@ -88,24 +88,47 @@ def mytest():
             hosts.append(node)
             
     ods = []
-    for i in range(OD_NUM):
-        od_path = []
-        ns = np.random.choice(hosts, size=2, replace=False)
-        #print(ns[0].name, ns[1].name)
-        pt = nx.shortest_path(G, ns[0], ns[1])
-        for pp in pt:
-            #print(pp.name)
-            od_path.append(pp)
-        nhost = 16
-        load = 0.3
-        time = 0.1
-        traffic_gen(nhost, load, time)
+    
+    nhost = 16
+    load = 0.3
+    time = 0.1
+    f_list = traffic_gen(nhost, load, time)
+    t = 2
+    end_time = time + t
+    while(t <= end_time):
+        for i in range(OD_NUM):
+            od_path = []
+            ns = np.random.choice(hosts, size=2, replace=False)
+            #print(ns[0].name, ns[1].name)
+            pt = nx.shortest_path(G, ns[0], ns[1])
+            for pp in pt:
+                #print(pp.name)
+                od_path.append(pp)
 
-        sketch = Sketch(0.05, 0.01) #epsilon and delta
-        od = OdSketch(od_path, sketch)     #we should assign a sketch to an od pair
-        ods.append(od)
-        print(od.sketch.Q)
-        #place_sketch(G.nodes(), ods)
+            od = OD(od_path, 0)
+            for f in f_list:
+                if f.t > t and f.t < t + 0.1:
+                    if ns[0].name == "h"+str(f.src) and ns[1].name == "h"+str(f.dst):
+                        od.flowsize = f.size + od.flowsize
+                        print("aaa", od.flowsize)
+            print("a", od.flowsize)
+
+            #for f in f_list:
+            #    print(f.t)
+    
+
+
+            #sketch = Sketch(0.05, 0.01) #epsilon and delta
+            #od = OdSketch(od_path, sketch)     #we should assign a sketch to an od pair
+            #ods.append(od)
+            #print(od.sketch.Q)
+            #place_sketch(G.nodes(), ods)        
+
+
+
+
+        t = t + 0.1
+
         
     # print(G.nodes())
     # nx.draw(G)
