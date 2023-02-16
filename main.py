@@ -82,13 +82,11 @@ def mytest():
     G = nx.Graph()
     FatTreeTopo(4,G)
     for node in G.nodes():
-        #print(node.name)
-        #print(node.M)
         if "h" in node.name:
             hosts.append(node)
             
     ods = []
-    
+    abs_err = 1000
     nhost = 16
     load = 0.3
     time = 0.1
@@ -99,40 +97,39 @@ def mytest():
         for i in range(OD_NUM):
             od_path = []
             ns = np.random.choice(hosts, size=2, replace=False)
-            #print(ns[0].name, ns[1].name)
             pt = nx.shortest_path(G, ns[0], ns[1])
             for pp in pt:
-                #print(pp.name)
                 od_path.append(pp)
 
-            od = OD(od_path, 0)
+            od = OD(od_path, 0, 0)
             for f in f_list:
                 if f.t > t and f.t < t + 0.1:
                     if ns[0].name == "h"+str(f.src) and ns[1].name == "h"+str(f.dst):
+                        #print("flow size", f.size)
                         od.flowsize = f.size + od.flowsize
-                        print("aaa", od.flowsize)
-            print("a", od.flowsize)
 
+            if od.flowsize != 0:
+                epsilon = abs_err/od.flowsize
+                width = math.ceil(math.e/epsilon)
+                delta = 0.05
+                num_of_regs = math.ceil(math.log(1/delta))
+                #print("num of regs", num_of_regs)
+                sketch_size = num_of_regs * width * 4 #each register 32 bits
+                #print("sketch size", sketch_size)
+                od.sketch_size = sketch_size            
+            ods.append(od)
             #for f in f_list:
             #    print(f.t)
-    
-
-
-            #sketch = Sketch(0.05, 0.01) #epsilon and delta
-            #od = OdSketch(od_path, sketch)     #we should assign a sketch to an od pair
-            #ods.append(od)
-            #print(od.sketch.Q)
-            #place_sketch(G.nodes(), ods)        
-
-
-
-
+            place_sketch(od)     
         t = t + 0.1
 
+
+    
+
+    for d in ods:
+        print("od sketch size", d.sketch_size)
+      
         
-    # print(G.nodes())
-    # nx.draw(G)
-    # plt.show()
 
 if __name__ == "__main__":
     mytest()
