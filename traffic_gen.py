@@ -68,7 +68,7 @@ def traffic_gen(nhost, load, time):
 	f_list = []
 	avg = customRand.getAvg()
 	avg_inter_arrival = 1/(bandwidth*load/8./avg)*1000000000
-	print(avg_inter_arrival)
+	#print(avg_inter_arrival)
 	for i in range(nhost):
 		t = base_t
 		while True:
@@ -84,11 +84,10 @@ def traffic_gen(nhost, load, time):
 				size = 1
 			flows = []
 			f_list.append(Flow(i, dst, size, t * 1e-9))
-			heapq.heappush(flows, (i, dst, size, t * 1e-9))
-			abs_err = 1000
-			epsilon = abs_err/size
-			width = math.ceil(math.e/epsilon)
-			num_of_regs = 3
+			#abs_err = 1000
+			#epsilon = abs_err/size
+			#width = math.ceil(math.e/epsilon)
+			#num_of_regs = 3
 			#print("epsilon", epsilon)
 			#print("sketch width", width)
 			#print("sketch size", width*num_of_regs)

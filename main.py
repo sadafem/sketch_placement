@@ -2,7 +2,7 @@ import numpy as np
 import networkx as nx
 from elements import *
 import matplotlib.pyplot as plt
-from opt import *
+from solver import *
 from traffic_gen import *
 
 class FatTreeTopo():
@@ -98,6 +98,9 @@ def mytest():
             od_path = []
             ns = np.random.choice(hosts, size=2, replace=False)
             pt = nx.shortest_path(G, ns[0], ns[1])
+            print("---------------------------------")
+            print("source:", ns[0].name)
+            print("destination:", ns[1].name)
             for pp in pt:
                 od_path.append(pp)
 
@@ -105,9 +108,9 @@ def mytest():
             for f in f_list:
                 if f.t > t and f.t < t + 0.1:
                     if ns[0].name == "h"+str(f.src) and ns[1].name == "h"+str(f.dst):
-                        #print("flow size", f.size)
+                        print("a flow with size", f.size, "goes from", ns[0].name, "to", ns[1].name, "in time:", f.t)
                         od.flowsize = f.size + od.flowsize
-
+            print("Total size of flows between this OD within an epoch:", od.flowsize)
             if od.flowsize != 0:
                 epsilon = abs_err/od.flowsize
                 width = math.ceil(math.e/epsilon)
@@ -125,9 +128,6 @@ def mytest():
 
 
     
-
-    for d in ods:
-        print("od sketch size", d.sketch_size)
       
         
 

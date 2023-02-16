@@ -11,7 +11,7 @@ def place_sketch(od):
                     best_d = d
         if best_d is not None:
             best_d.place_sketch(od)
-            print(best_d.name)
+            print("best device:", best_d.name)
  
                 #tr.admit_num = 1
                 #tr.mem_usage.append(best_d.M - best_d.mem_avail())
