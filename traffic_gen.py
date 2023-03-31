@@ -131,7 +131,7 @@ def traffic_gen(G, load, time, bw):
 		if "e" in node.name and "core" not in node.name:
 			edges.append(node)
 			#print(node.name)
-	nhost = 40
+	nhost = 20
 	for i in range(nhost):
 
 		t = base_t
