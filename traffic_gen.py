@@ -4,12 +4,61 @@ import math
 from optparse import OptionParser
 from custom_rand import CustomRand
 import heapq
+import numpy as np
+import networkx as nx
+
+class Event:
+    def __init__(self, e_type, e_value, e_object):
+        self.type = e_type
+        self.value = e_value
+        self.object = e_object
+
+    def __lt__(self, other):
+        return self.value < other.value
+
+    def __eq__(self, other):
+        return self.value == other.value
+
+class Bottleneck:
+    def __init__(self, b_value, b_object):
+        self.value = b_value
+        self.object = b_object
+
+    def __lt__(self, other):
+        return self.value < other.value
+
+    def __eq__(self, other):
+        return self.value == other.value
+
 
 class Flow:
-	def __init__(self, src, dst, size, t):
-		self.src, self.dst, self.size, self.t = src, dst, size, t
+	def __init__(self, id, src, dst, size, f_arrival):
+		self.id, self.src, self.dst, self.size, self.arrival_time = id, src, dst, size, f_arrival
+		self.finish_time = 0
+		self.remained_size = size
+		self.prev_start = f_arrival
+		self.prev_bw = 0
+		self.finish_event = None
+		self.path = None
+		self.modified = False
+		
 	def __str__(self):
-		return("%d %d %d %.9f"%(self.src, self.dst, self.size, self.t))
+		return "({}: {}->{})".format(self.id, self.src, self.dst)
+
+	def __repr__(self):
+		return self.__str__()	
+
+	def calc_finish_time(self, cur_t, cur_bw):
+		latest_tr = (cur_t - self.prev_start) * self.prev_bw
+		self.remained_size = self.remained_size - latest_tr
+		expected_finish = cur_t + (self.remained_size / cur_bw)
+        #print("\t[CALC] {} been sending from {} to {} with {}. Sent {}. With {} will finish {} at {}."
+        #      .format(self, self.prev_start, cur_t, self.prev_bw, latest_tr, cur_bw, self.remained_size, expected_finish))
+		self.prev_start = cur_t
+		self.prev_bw = cur_bw
+		return expected_finish
+
+		#return("%d %d %d %.9f"%(self.src, self.dst, self.size, self.t))
 
 def translate_bandwidth(b):
 	if b == None:
@@ -27,25 +76,28 @@ def translate_bandwidth(b):
 def poisson(lam):
 	return -math.log(1-random.random())*lam
 
-def traffic_gen(nhost, load, time):
+def traffic_gen(G, load, time, bw):
 	port = 80
 	parser = OptionParser()
 	parser.add_option("-c", "--cdf", dest = "cdf_file", help = "the file of the traffic size cdf", default = "WebSearch_distribution.txt")
 	#parser.add_option("-n", "--nhost", dest = "nhost", help = "number of hosts")
 	#parser.add_option("-l", "--load", dest = "load", help = "the percentage of the traffic load to the network capacity, by default 0.3", default = "0.3")
-	parser.add_option("-b", "--bandwidth", dest = "bandwidth", help = "the bandwidth of host link (G/M/K), by default 10G", default = "10G")
+	#parser.add_option("-b", "--bandwidth", dest = "bandwidth", help = "the bandwidth of host link (G/M/K), by default 10Gb", default = "10G")
 	#parser.add_option("-t", "--time", dest = "time", help = "the total run time (s), by default 10", default = "10")
 	options,args = parser.parse_args()
 
-	base_t = 2000000000
+	base_t = 0000000000
 
 	#if not options.nhost:
 	#	print("please use -n to enter number of hosts")
 	#	sys.exit(0)
 	#nhost = int(options.nhost)
 	#load = float(options.load)
-	bandwidth = translate_bandwidth(options.bandwidth)
+	bandwidth = translate_bandwidth(bw)
+	print("bw", bandwidth)
+	print(time)
 	time = float(time)*1e9 # translates to ns
+	print(time)
 	if bandwidth == None:
 		print("bandwidth format incorrect")
 		sys.exit(0)
@@ -65,25 +117,66 @@ def traffic_gen(nhost, load, time):
 		print("Error: Not valid cdf")
 		sys.exit(0)
 
-	f_list = []
 	avg = customRand.getAvg()
 	avg_inter_arrival = 1/(bandwidth*load/8./avg)*1000000000
 	#print(avg_inter_arrival)
+	flow_id = 1
+	flows = []
+	hosts = []
+	edges = []
+	for node in G.nodes():
+		#print(node.name)
+		if "h" in node.name:
+			hosts.append(node)
+		if "e" in node.name and "core" not in node.name:
+			edges.append(node)
+			#print(node.name)
+	nhost = 40
 	for i in range(nhost):
+
 		t = base_t
 		while True:
 			inter_t = int(poisson(avg_inter_arrival))
 			t += inter_t
 			dst = random.randint(0, nhost-1)
-			while (dst == i):
+			while (hosts[dst] == hosts[i]):
 				dst = random.randint(0, nhost-1)
 			if (t > time + base_t):
 				break
 			size = int(customRand.rand())
+
 			if size <= 0:
-				size = 1
-			flows = []
-			f_list.append(Flow(i, dst, size, t * 1e-9))
+				size = 1	
+			#print("size", size)
+			#print("arrival", t * 1e-9)
+			print(len(hosts))
+			flow = Flow(flow_id, hosts[i], hosts[dst], size, t * 1e-9)
+			print(hosts[i].name, hosts[dst].name)
+			paths = list(nx.all_shortest_paths(G, source=flow.src, target=flow.dst))
+			#flow.path = paths[np.random.randint(0, len(paths))]
+			flow.path = paths[0]
+			#print(flow.path)
+
+			flow_id = flow_id + 1
+			flows.append(flow)
+			print("flow length", len(flows))
+	#flows.sort(key = lambda x: x.arrival_time)
+	return flows
+	#for i in range(nhost):
+	#	t = base_t
+	#	while True:
+	#		inter_t = int(poisson(avg_inter_arrival))
+	#		t += inter_t
+	#		dst = random.randint(0, nhost-1)
+	#		while (dst == i):
+	#			dst = random.randint(0, nhost-1)
+	#		if (t > time + base_t):
+	#			break
+	#		size = int(customRand.rand())
+	#		if size <= 0:
+	#			size = 1
+	#		flows = []
+	#		f_list.append(Flow(i, dst, size, t * 1e-9))
 			#abs_err = 1000
 			#epsilon = abs_err/size
 			#width = math.ceil(math.e/epsilon)
@@ -92,9 +185,9 @@ def traffic_gen(nhost, load, time):
 			#print("sketch width", width)
 			#print("sketch size", width*num_of_regs)
 
-	f_list.sort(key = lambda x: x.t)
+	#f_list.sort(key = lambda x: x.t)
 
 	#print(len(f_list))
 	#for f in f_list:
 		#print(f)
-	return f_list
+	#return f_list

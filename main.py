@@ -4,22 +4,125 @@ from elements import *
 import matplotlib.pyplot as plt
 from solver import *
 from traffic_gen import *
+from matplotlib import pyplot as plt
+
+class FinishTime:
+    def __init__(self, G, bandwidth):
+        self.G = G
+    #     #  1---- 3-----4-----5
+    #     #        |     |
+    #     #  2-----      ------6
+    #     self.G = nx.DiGraph()
+    #     self.G.add_nodes_from([1, 2, 3, 4, 5, 6])
+    #     self.G.add_edges_from([(1, 3), (3, 1), (1, 2), (2, 1), (2, 4), (4, 2), (2, 3), (3, 2), (3, 4), (4, 3), (4, 5), (5, 4), (4, 6), (6, 4)])
+        for e in self.G.edges():
+            self.G.edges[e]["bw"] = bandwidth
+            self.G.edges[e]["cur_flows"] = set()
+            self.G.edges[e]["bottleneck"] = None
+
+    def get_link_inc(self, e):
+        used_bw = 0
+        unfixed_flows = 0
+        for flow in self.G.edges[e]["cur_flows"]:
+            if flow.modified:
+                used_bw = used_bw + flow.prev_bw
+            else:
+                unfixed_flows = unfixed_flows + 1
+        if unfixed_flows > 0:
+            return (self.G.edges[e]["bw"] - used_bw) / unfixed_flows
+        else:
+            return 0
+#return of this function is to calculate size per epoch per path
+    def compute_finish_times(self, flows):
+        events = list()
+        ARRIVAL = "ARRIVAL"
+        DEPARTURE = "DEPARTURE"
+        for flow in flows:
+            arrival_event = Event(ARRIVAL, flow.arrival_time, flow)
+            heapq.heappush(events, arrival_event)
+        # ye data structure misazim va migim be ezaye har masir va har epoch va un payin poresh mikonim
+        while len(events) > 0:
+            event = heapq.heappop(events)
+            if event.type == DEPARTURE:
+                #print("departure")
+                event.object.finish_time = event.value
+            #else:
+                #print("arrival")
+                
+
+            #print("[{}] {} at {}.".format(event.type, event.object, event.value))
+
+            # remove/add the flow from/to links along its path
+            path = event.object.path
+            in_bottleneck = set()
+            modified_flows = set()
+            for idx in range(len(path) - 1):
+                cur_e = (path[idx], path[idx + 1])
+                in_bottleneck.add(cur_e)
+                if event.type == ARRIVAL:
+                    self.G.edges[cur_e]["cur_flows"].add(event.object)
+                elif event.type == DEPARTURE:
+                    self.G.edges[cur_e]["cur_flows"].remove(event.object)
+
+
+            # sort all affected links based on the possible increase per flow
+            bottlenecks = list()
+            for e in in_bottleneck:
+                if len(self.G.edges[e]["cur_flows"]) > 0:
+                    bottleneck = Bottleneck(self.G.edges[e]["bw"] / len(self.G.edges[e]["cur_flows"]), e)
+                    self.G.edges[e]["bottleneck"] = bottleneck
+                    heapq.heappush(bottlenecks, bottleneck)
+
+            while len(bottlenecks) > 0:
+                bottleneck = heapq.heappop(bottlenecks)
+                # determine the least flow rates and fix them
+                link_inc = self.get_link_inc(bottleneck.object)
+                if link_inc > 0:
+                    for flow in self.G.edges[bottleneck.object]["cur_flows"]:
+                        if not flow.modified:
+                            flow.modified = True
+                            modified_flows.add(flow)
+                            new_finish = flow.calc_finish_time(event.value, link_inc)
+                            if flow.finish_event is None:
+                                flow.finish_event = Event(DEPARTURE, new_finish, flow)
+                                heapq.heappush(events, flow.finish_event)
+                            else:
+                                flow.finish_event.value = new_finish
+                        # add all other links in the  path of flows in the current link
+                        path = flow.path
+                        for idx in range(len(path) - 1):
+                            cur_e = (path[idx], path[idx + 1])
+                            link_inc_update = self.get_link_inc(cur_e)
+                            if link_inc_update > 0:
+                                in_bottleneck.add(cur_e)
+                                if cur_e not in in_bottleneck:
+                                    bottleneck2 = Bottleneck(link_inc_update, cur_e)
+                                    self.G.edges[cur_e]["bottleneck"] = bottleneck2
+                                    heapq.heappush(bottlenecks, bottleneck2)
+                                else:
+                                    self.G.edges[cur_e]["bottleneck"].value = link_inc_update
+                heapq.heapify(bottlenecks)
+            heapq.heapify(events)
+
+            for flow in modified_flows:
+                flow.modified = False
+
 
 class FatTreeTopo():
-    def __init__(self, k, G):
-        if (k % 2) != 0:
-            print('Number of ports in a fattree must be even!')
-            return
-        num_pods = k
-        num_core = k * k // 4
-        num_agg = k * k // 2
-        num_agg_per_pod = k // 2
-        num_edge = k * k // 2
-        num_edge_per_pod = k // 2
-        hosts_per_sw = k // 2
+    def __init__(self, G):
+        #if (k % 2) != 0:
+        #    print('Number of ports in a fattree must be even!')
+        #    return
+        num_pods = 5
+        num_core = 16
+        num_agg = 20
+        num_agg_per_pod = 4
+        num_edge = 20
+        num_edge_per_pod = 4
+        hosts_per_sw = 2
         num_sws = num_core + num_agg + num_edge
         
-        print('Create a fattree topology with {} switches'.format(num_sws)) 
+        print('Create a fattree topology with {} switches'.format(num_sws))
 
         dpid_counter = 1
         cores = []
@@ -72,59 +175,154 @@ class FatTreeTopo():
             agg, edge = pod
             for agg_i in range(num_agg_per_pod):
                 a = agg[agg_i]
-                for core_i in range(k // 2): # k/2 == num_core/num_agg_per_pod
-                    c = cores[core_i + (agg_i * k // 2)]
+                
+                for core_i in range(4):
+                    c = cores[core_i + (agg_i * 4)]
                     G.add_edge(a, c)
-
+def translate_bandwidth(b):
+	if b == None:
+		return None
+	if type(b)!=str:
+		return None
+	if b[-1] == 'G':
+		return float(b[:-1])*1e9
+	if b[-1] == 'M':
+		return float(b[:-1])*1e6
+	if b[-1] == 'K':
+		return float(b[:-1])*1e3
+	return float(b)
 def mytest():
-    OD_NUM = 10
-    hosts = []
-    G = nx.Graph()
-    FatTreeTopo(4,G)
-    for node in G.nodes():
-        if "h" in node.name:
-            hosts.append(node)
-            
-    ods = []
-    abs_err = 1000
-    nhost = 16
     load = 0.3
-    time = 0.1
-    f_list = traffic_gen(nhost, load, time)
-    t = 2
-    end_time = time + t
-    while(t <= end_time):
-        for i in range(OD_NUM):
-            od_path = []
-            ns = np.random.choice(hosts, size=2, replace=False)
-            pt = nx.shortest_path(G, ns[0], ns[1])
-            print("---------------------------------")
-            print("source:", ns[0].name)
-            print("destination:", ns[1].name)
-            for pp in pt:
-                od_path.append(pp)
+    time = 1
+    bandwidth = "10G"    
+    G = nx.Graph()
+    FatTreeTopo(G)
+    bw = translate_bandwidth(bandwidth)
+    ft = FinishTime(G, bw)
+    flows = list()
+    flows = traffic_gen(G, load, time, bandwidth)
+    #print("flows length", len(flows))
+    # for key, value in flow_dic.items():
+    #     print("key:", key, "value:", value)
+    ft.compute_finish_times(flows)
+    #print(len(flows))
+    f_sizes = []
+    f_durations = []
+    for f in flows:
+        f_sizes.append(f.size)
+        f_durations.append((f.finish_time - f.arrival_time))
+        #print(f.finish_time - f.arrival_time)
+        #print("src:", f.src.name, "dst:", f.dst.name, "Arrival:", f.arrival_time, "Finish:", f.finish_time, "Size:", f.size, "Duration:", f.finish_time - f.arrival_time)
 
-            od = OD(od_path, 0, 0)
-            for f in f_list:
-                if f.t > t and f.t < t + 0.1:
-                    if ns[0].name == "h"+str(f.src) and ns[1].name == "h"+str(f.dst):
-                        print("a flow with size", f.size, "goes from", ns[0].name, "to", ns[1].name, "in time:", f.t)
-                        od.flowsize = f.size + od.flowsize
-            print("Total size of flows between this OD within an epoch:", od.flowsize)
-            if od.flowsize != 0:
-                epsilon = abs_err/od.flowsize
-                width = math.ceil(math.e/epsilon)
-                delta = 0.05
-                num_of_regs = math.ceil(math.log(1/delta))
-                #print("num of regs", num_of_regs)
-                sketch_size = num_of_regs * width * 4 #each register 32 bits
-                #print("sketch size", sketch_size)
-                od.sketch_size = sketch_size            
-            ods.append(od)
-            #for f in f_list:
-            #    print(f.t)
-            place_sketch(od)     
-        t = t + 0.1
+    x = np.sort(f_sizes)
+    print(len(x))
+    y = 1. * np.arange(len(f_sizes)) / (len(f_sizes) - 1)
+    plt.plot(x, y)
+    plt.xlabel("Flow Size (bytes)")
+    plt.ylabel("Probability")
+    plt.show()
+
+    d = np.sort(f_durations)
+    dd = 1. * np.arange(len(f_durations)) / (len(f_durations) - 1)
+    plt.plot(d, dd)
+    plt.xlabel("Flow Duration")
+    plt.ylabel("Probability")
+    plt.show()
+
+    t = 0
+    end_time = time + t
+    count = 0
+    aggflows = []
+    while(t <= end_time):
+        print("t:", t, "end time:", end_time)
+        flow_dic = {}
+        print(flow_dic)
+        #print(t)
+        print("epooooch")
+        count = count + 1  
+        for f in flows:
+            
+            #for p in f.path:
+            #    print(p.name)
+            fp = str(f.path[1:-1])
+            if fp in flow_dic:
+                tmp = flow_dic.get(fp)
+            else:
+                tmp = 0
+                #print("hii")
+            if f.arrival_time > t and f.arrival_time < t + 0.01 and f.finish_time < t + 0.01:
+                #print("tmp", tmp)
+                flow_dic[fp] = tmp + f.size
+                print("1", "arrival:", f.arrival_time, "finish:", f.finish_time, "size:", f.size)
+                #print("flow dic", flow_dic[fp])
+            if f.arrival_time > t and f.arrival_time < t + 0.01 and f.finish_time > t + 0.01:
+                print("2", "arrival:", f.arrival_time, "finish:", f.finish_time, "size:", f.size, f.size*(((t + 0.01) - f.arrival_time)/(f.finish_time - f.arrival_time)))
+                #print("tmp", tmp)
+                flow_dic[fp] = tmp + f.size*(((t + 0.01) - f.arrival_time)/(f.finish_time - f.arrival_time))
+
+            if f.arrival_time < t and f.finish_time > t and f.finish_time < t + 0.01:
+                #print("hiiiii")
+                print("3", "arrival:", f.arrival_time, "finish:", f.finish_time, "size:", f.size, f.size * ((f.finish_time - t)/(f.finish_time - f.arrival_time)))
+                flow_dic[fp] = tmp + f.size * ((f.finish_time - t)/(f.finish_time - f.arrival_time))
+            if f.arrival_time < t and f.finish_time > t + 0.01:
+                print("4", "arrival:", f.arrival_time, "finish:", f.finish_time, "size:", f.size)
+                flow_dic[fp] = tmp + 0.01 / (f.finish_time - f.arrival_time)
+                
+        #aggsize.append()   
+        print("dic len", len(flow_dic))
+        #for key, value in flow_dic.items():
+        #    aggflows.append(value)
+
+        t = t + 0.01
+    #print("number of epochs:", count) 
+    #plt.bar(range(len(aggflows)), aggflows)
+    #plt.xlabel("epoch #")
+    #plt.ylabel("aggregate flow size of an OD path (bytes)")
+    #plt.show()
+    #for v in aggflows:
+    #    print(v)
+    #print(len(aggflows))
+    # ods = []
+    # abs_err = 1000
+    # nhost = 16
+    # load = 0.3
+    # time = 0.1
+    # f_list = traffic_gen(nhost, load, time)
+    # t = 2
+    # end_time = time + t
+    # while(t <= end_time):
+    #     for i in range(OD_NUM):
+    #         od_path = []
+    #         ns = np.random.choice(hosts, size=2, replace=False)
+    #         pt = nx.shortest_path(G, ns[0], ns[1])
+    #         #print("---------------------------------")
+    #         #print("source:", ns[0].name)
+    #         #print("destination:", ns[1].name)
+    #         for pp in pt:
+    #             od_path.append(pp)
+
+        #     od = OD(od_path, 0, 0)
+        #     for f in f_list:
+        #         if f.t > t and f.t < t + 0.1:
+        #             if ns[0].name == "h"+str(f.src) and ns[1].name == "h"+str(f.dst):
+        #                 print("a flow with size", f.size, "goes from", ns[0].name, "to", ns[1].name, "in time:", f.t)
+        #                 od.flowsize = f.size + od.flowsize
+        #     print("Total size of flows between this OD within an epoch:", od.flowsize)
+        #     if od.flowsize != 0:
+        #         epsilon = abs_err/od.flowsize
+        #         width = math.ceil(math.e/epsilon)
+        #         delta = 0.05
+        #         num_of_regs = math.ceil(math.log(1/delta))
+        #         print(num_of_regs)
+        #         print("num of regs", num_of_regs)
+        #         sketch_size = num_of_regs * width * 4 #each register 32 bits
+        #         print("sketch size", sketch_size)
+        #        od.sketch_size = sketch_size            
+        #    ods.append(od)
+        #     for f in f_list:
+        #        print(f.t)
+        #    place_sketch(od)     
+        # t = t + 0.1
 
 
     
