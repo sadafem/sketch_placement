@@ -32,7 +32,7 @@ class FinishTime:
             return (self.G.edges[e]["bw"] - used_bw) / unfixed_flows
         else:
             return 0
-#return of this function is to calculate size per epoch per path
+
     def compute_finish_times(self, flows):
         events = list()
         ARRIVAL = "ARRIVAL"
@@ -40,7 +40,6 @@ class FinishTime:
         for flow in flows:
             arrival_event = Event(ARRIVAL, flow.arrival_time, flow)
             heapq.heappush(events, arrival_event)
-        # ye data structure misazim va migim be ezaye har masir va har epoch va un payin poresh mikonim
         while len(events) > 0:
             event = heapq.heappop(events)
             if event.type == DEPARTURE:
@@ -193,7 +192,7 @@ def translate_bandwidth(b):
 	return float(b)
 def mytest():
     load = 0.3
-    time = 100
+    time = 80
     bandwidth = "1G"    
     G = nx.Graph()
     FatTreeTopo(G)
@@ -215,7 +214,6 @@ def mytest():
         #print("src:", f.src.name, "dst:", f.dst.name, "Arrival:", f.arrival_time, "Finish:", f.finish_time, "Size:", f.size, "Duration:", f.finish_time - f.arrival_time)
 
     x = np.sort(f_sizes)
-    print(len(x))
     y = 1. * np.arange(len(f_sizes)) / (len(f_sizes) - 1)
     plt.plot(x, y)
     plt.xlabel("Flow Size (bytes)")
@@ -235,12 +233,12 @@ def mytest():
     aggflows = []
     epoch_length = 5
     lens = []
+    all_epochs_flucs = []
     while(t <= end_time):
-        print("t:", t, "end time:", end_time)
         flow_dic = {}
-        print(flow_dic)
-        #print(t)
-        print("epooooch")
+        tmp_dic = {}
+        diff = {}
+        print("epoooooooch")
         count = count + 1  
         for f in flows:
             
@@ -270,14 +268,37 @@ def mytest():
                 #print("4", "arrival:", f.arrival_time, "finish:", f.finish_time, "size:", f.size)
                 flow_dic[fp] = tmp + epoch_length / (f.finish_time - f.arrival_time)
                 
-        #aggsize.append()   
+        #aggsize.append() 
+        diffs = {key: flow_dic[key] - tmp_dic.get(key, 0) for key in flow_dic}
+        for k, v in diffs.items():
+            print("diff", v)
+        flucs = list(diffs.values())
+        all_epochs_flucs.append(flucs)
+        for key, value in flow_dic.items():
+            tmp_dic[key] = value
+
         lens.append(len(flow_dic))
+        print(flow_dic)
         #for key, value in flow_dic.items():
         #    aggflows.append(value)
 
         t = t + epoch_length
     for l in lens:
-        print("epoch length", l)
+        print("flow dic length", l)
+    for n in all_epochs_flucs:
+        print(n)
+    
+    sample_epoch = all_epochs_flucs[5]
+    plt.bar(range(len(sample_epoch)), sample_epoch)
+    plt.show()
+
+    x = np.sort(sample_epoch)
+    y = 1. * np.arange(len(sample_epoch)) / (len(sample_epoch) - 1)
+    plt.plot(x, y)
+    plt.xlabel("Flucs")
+    plt.ylabel("Probability")
+    plt.show()
+
     #print("number of epochs:", count) 
     #plt.bar(range(len(aggflows)), aggflows)
     #plt.xlabel("epoch #")

@@ -97,7 +97,6 @@ def traffic_gen(G, load, time, bw):
 	print("bw", bandwidth)
 	print(time)
 	time = float(time)*1e9 # translates to ns
-	print(time)
 	if bandwidth == None:
 		print("bandwidth format incorrect")
 		sys.exit(0)
@@ -131,7 +130,7 @@ def traffic_gen(G, load, time, bw):
 		if "e" in node.name and "core" not in node.name:
 			edges.append(node)
 			#print(node.name)
-	nhost = 20
+	nhost = 40
 	for i in range(nhost):
 
 		t = base_t
@@ -149,9 +148,8 @@ def traffic_gen(G, load, time, bw):
 				size = 1	
 			#print("size", size)
 			#print("arrival", t * 1e-9)
-			print(len(hosts))
 			flow = Flow(flow_id, hosts[i], hosts[dst], size, t * 1e-9)
-			print(hosts[i].name, hosts[dst].name)
+			print(hosts[i].name, hosts[dst].name, size)
 			paths = list(nx.all_shortest_paths(G, source=flow.src, target=flow.dst))
 			#flow.path = paths[np.random.randint(0, len(paths))]
 			flow.path = paths[0]
@@ -159,7 +157,7 @@ def traffic_gen(G, load, time, bw):
 
 			flow_id = flow_id + 1
 			flows.append(flow)
-			print("flow length", len(flows))
+
 	#flows.sort(key = lambda x: x.arrival_time)
 	return flows
 	#for i in range(nhost):
