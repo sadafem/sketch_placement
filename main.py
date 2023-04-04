@@ -193,8 +193,8 @@ def translate_bandwidth(b):
 	return float(b)
 def mytest():
     load = 0.3
-    time = 5
-    bandwidth = "10G"    
+    time = 100
+    bandwidth = "1G"    
     G = nx.Graph()
     FatTreeTopo(G)
     bw = translate_bandwidth(bandwidth)
@@ -233,7 +233,8 @@ def mytest():
     end_time = time + t
     count = 0
     aggflows = []
-    epoch_length = 1
+    epoch_length = 5
+    lens = []
     while(t <= end_time):
         print("t:", t, "end time:", end_time)
         flow_dic = {}
@@ -254,27 +255,29 @@ def mytest():
             if f.arrival_time > t and f.arrival_time < t + epoch_length and f.finish_time < t + epoch_length:
                 #print("tmp", tmp)
                 flow_dic[fp] = tmp + f.size
-                print("1", "arrival:", f.arrival_time, "finish:", f.finish_time, "size:", f.size)
+                #print("1", "arrival:", f.arrival_time, "finish:", f.finish_time, "size:", f.size)
                 #print("flow dic", flow_dic[fp])
             if f.arrival_time > t and f.arrival_time < t + epoch_length and f.finish_time > t + epoch_length:
-                print("2", "arrival:", f.arrival_time, "finish:", f.finish_time, "size:", f.size, f.size*(((t + epoch_length) - f.arrival_time)/(f.finish_time - f.arrival_time)))
+                #print("2", "arrival:", f.arrival_time, "finish:", f.finish_time, "size:", f.size, f.size*(((t + epoch_length) - f.arrival_time)/(f.finish_time - f.arrival_time)))
                 #print("tmp", tmp)
                 flow_dic[fp] = tmp + f.size*(((t + epoch_length) - f.arrival_time)/(f.finish_time - f.arrival_time))
 
             if f.arrival_time < t and f.finish_time > t and f.finish_time < t + epoch_length:
                 #print("hiiiii")
-                print("3", "arrival:", f.arrival_time, "finish:", f.finish_time, "size:", f.size, f.size * ((f.finish_time - t)/(f.finish_time - f.arrival_time)))
+                #print("3", "arrival:", f.arrival_time, "finish:", f.finish_time, "size:", f.size, f.size * ((f.finish_time - t)/(f.finish_time - f.arrival_time)))
                 flow_dic[fp] = tmp + f.size * ((f.finish_time - t)/(f.finish_time - f.arrival_time))
             if f.arrival_time < t and f.finish_time > t + epoch_length:
-                print("4", "arrival:", f.arrival_time, "finish:", f.finish_time, "size:", f.size)
+                #print("4", "arrival:", f.arrival_time, "finish:", f.finish_time, "size:", f.size)
                 flow_dic[fp] = tmp + epoch_length / (f.finish_time - f.arrival_time)
                 
         #aggsize.append()   
-        print("dic len", len(flow_dic))
+        lens.append(len(flow_dic))
         #for key, value in flow_dic.items():
         #    aggflows.append(value)
 
         t = t + epoch_length
+    for l in lens:
+        print("epoch length", l)
     #print("number of epochs:", count) 
     #plt.bar(range(len(aggflows)), aggflows)
     #plt.xlabel("epoch #")
