@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from solver import *
 from traffic_gen import *
 from matplotlib import pyplot as plt
+from itertools import chain
 
 class FinishTime:
     def __init__(self, G, bandwidth):
@@ -118,7 +119,7 @@ class FatTreeTopo():
         num_agg_per_pod = 4
         num_edge = 20
         num_edge_per_pod = 4
-        hosts_per_sw = 2
+        hosts_per_sw = 16
         num_sws = num_core + num_agg + num_edge
         
         print('Create a fattree topology with {} switches'.format(num_sws))
@@ -192,7 +193,7 @@ def translate_bandwidth(b):
 	return float(b)
 def mytest():
     load = 0.3
-    time = 80
+    time = 20
     bandwidth = "1G"    
     G = nx.Graph()
     FatTreeTopo(G)
@@ -230,13 +231,12 @@ def mytest():
     t = 0
     end_time = time + t
     count = 0
-    aggflows = []
     epoch_length = 5
     lens = []
     all_epochs_flucs = []
+    tmp_dic = {}
     while(t <= end_time):
         flow_dic = {}
-        tmp_dic = {}
         diff = {}
         print("epoooooooch")
         count = count + 1  
@@ -249,19 +249,14 @@ def mytest():
                 tmp = flow_dic.get(fp)
             else:
                 tmp = 0
-                #print("hii")
             if f.arrival_time > t and f.arrival_time < t + epoch_length and f.finish_time < t + epoch_length:
-                #print("tmp", tmp)
                 flow_dic[fp] = tmp + f.size
                 #print("1", "arrival:", f.arrival_time, "finish:", f.finish_time, "size:", f.size)
                 #print("flow dic", flow_dic[fp])
             if f.arrival_time > t and f.arrival_time < t + epoch_length and f.finish_time > t + epoch_length:
                 #print("2", "arrival:", f.arrival_time, "finish:", f.finish_time, "size:", f.size, f.size*(((t + epoch_length) - f.arrival_time)/(f.finish_time - f.arrival_time)))
-                #print("tmp", tmp)
                 flow_dic[fp] = tmp + f.size*(((t + epoch_length) - f.arrival_time)/(f.finish_time - f.arrival_time))
-
             if f.arrival_time < t and f.finish_time > t and f.finish_time < t + epoch_length:
-                #print("hiiiii")
                 #print("3", "arrival:", f.arrival_time, "finish:", f.finish_time, "size:", f.size, f.size * ((f.finish_time - t)/(f.finish_time - f.arrival_time)))
                 flow_dic[fp] = tmp + f.size * ((f.finish_time - t)/(f.finish_time - f.arrival_time))
             if f.arrival_time < t and f.finish_time > t + epoch_length:
@@ -269,33 +264,42 @@ def mytest():
                 flow_dic[fp] = tmp + epoch_length / (f.finish_time - f.arrival_time)
                 
         #aggsize.append() 
-        diffs = {key: flow_dic[key] - tmp_dic.get(key, 0) for key in flow_dic}
-        for k, v in diffs.items():
-            print("diff", v)
-        flucs = list(diffs.values())
+        for key in flow_dic.keys():
+            print("flow dic:", flow_dic.get(key, 0), "tmp dic:", tmp_dic.get(key, 0))
+
+        fluctuation_dict = {}
+        for key in flow_dic:
+            if key in tmp_dic:
+                fluctuation_dict[key] = flow_dic[key] - tmp_dic[key]
+        #diffs = {key: flow_dic.get(key, 0) - tmp_dic.get(key, 0) for key in set(flow_dic) | set(tmp_dic)}
+        #for k, v in diffs.items():
+        #    print("diff", v)
+        #flucs = list(diffs.values())
+        flucs = [abs(ele) for ele in list(fluctuation_dict.values())]
         all_epochs_flucs.append(flucs)
         for key, value in flow_dic.items():
             tmp_dic[key] = value
 
         lens.append(len(flow_dic))
-        print(flow_dic)
         #for key, value in flow_dic.items():
         #    aggflows.append(value)
 
         t = t + epoch_length
     for l in lens:
         print("flow dic length", l)
-    for n in all_epochs_flucs:
-        print(n)
+    #for n in all_epochs_flucs:
+    #    print(n)
+    print("flucccccccccc size", len(all_epochs_flucs))
     
-    sample_epoch = all_epochs_flucs[5]
-    plt.bar(range(len(sample_epoch)), sample_epoch)
-    plt.show()
+    sample_epoch = [element for sublist in all_epochs_flucs[1:-1] for element in sublist]
+    print("sample epoch len", len(sample_epoch))
+    #plt.bar(range(len(sample_epoch)), sample_epoch)
+    #plt.show()
 
     x = np.sort(sample_epoch)
     y = 1. * np.arange(len(sample_epoch)) / (len(sample_epoch) - 1)
     plt.plot(x, y)
-    plt.xlabel("Flucs")
+    plt.xlabel("Fluctuations (OD diffs in 4 consequent epochs)")
     plt.ylabel("Probability")
     plt.show()
 
