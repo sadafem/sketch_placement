@@ -6,6 +6,7 @@ from solver import *
 from traffic_gen import *
 from matplotlib import pyplot as plt
 from itertools import chain
+import time
 
 class FinishTime:
     def __init__(self, G, bandwidth):
@@ -47,7 +48,7 @@ class FinishTime:
                 #print("departure")
                 event.object.finish_time = event.value
             #else:
-                #print("arrival")
+            #    print("arrival")
                 
 
             #print("[{}] {} at {}.".format(event.type, event.object, event.value))
@@ -192,6 +193,7 @@ def translate_bandwidth(b):
 		return float(b[:-1])*1e3
 	return float(b)
 def mytest():
+    #st = time.time()
     load = 0.3
     time = 20
     bandwidth = "1G"    
@@ -201,7 +203,7 @@ def mytest():
     ft = FinishTime(G, bw)
     flows = list()
     flows = traffic_gen(G, load, time, bandwidth)
-    #print("flows length", len(flows))
+    print("flows length", len(flows))
     # for key, value in flow_dic.items():
     #     print("key:", key, "value:", value)
     ft.compute_finish_times(flows)
@@ -293,6 +295,10 @@ def mytest():
     
     sample_epoch = [element for sublist in all_epochs_flucs[1:-1] for element in sublist]
     print("sample epoch len", len(sample_epoch))
+    
+    #et = time.time()
+    #elapsed_time = et - st
+    #print('Execution time:', elapsed_time, 'seconds')
     #plt.bar(range(len(sample_epoch)), sample_epoch)
     #plt.show()
 

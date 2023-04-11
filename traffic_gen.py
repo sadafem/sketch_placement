@@ -151,8 +151,8 @@ def traffic_gen(G, load, time, bw):
 			flow = Flow(flow_id, hosts[i], hosts[dst], size, t * 1e-9)
 			print(hosts[i].name, hosts[dst].name, size)
 			paths = list(nx.all_shortest_paths(G, source=flow.src, target=flow.dst))
-			#flow.path = paths[np.random.randint(0, len(paths))]
-			flow.path = paths[0]
+			flow.path = paths[np.random.randint(0, len(paths))]
+			#flow.path = paths[0]
 			#print(flow.path)
 
 			flow_id = flow_id + 1
