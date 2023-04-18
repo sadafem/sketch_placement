@@ -196,7 +196,7 @@ def mytest():
     #st = time.time()
     load = 0.3
     time = 20
-    bandwidth = "1G"    
+    bandwidth = "100M"    
     G = nx.Graph()
     FatTreeTopo(G)
     bw = translate_bandwidth(bandwidth)
@@ -273,6 +273,7 @@ def mytest():
         for key in flow_dic:
             if key in tmp_dic:
                 fluctuation_dict[key] = flow_dic[key] - tmp_dic[key]
+        place_sketch(flow_dic)
         #diffs = {key: flow_dic.get(key, 0) - tmp_dic.get(key, 0) for key in set(flow_dic) | set(tmp_dic)}
         #for k, v in diffs.items():
         #    print("diff", v)
@@ -352,7 +353,7 @@ def mytest():
         #         print("num of regs", num_of_regs)
         #         sketch_size = num_of_regs * width * 4 #each register 32 bits
         #         print("sketch size", sketch_size)
-        #        od.sketch_size = sketch_size            
+        #         od.sketch_size = sketch_size            
         #    ods.append(od)
         #     for f in f_list:
         #        print(f.t)

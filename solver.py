@@ -2,22 +2,28 @@
 #from gurobipy import GRB
 import numpy as np
 
-def place_sketch(od):
-        #tr = TestResult()
-        best_d = None
-        for d in od.od_path:
-            if d.mem_available() >= od.sketch_size:
-                if best_d is None or d.M - d.mem_available() < best_d.M - best_d.mem_available():
-                    best_d = d
-        if best_d is not None:
-            best_d.place_sketch(od)
-            #print("best device:", best_d.name)
- 
-                #tr.admit_num = 1
-                #tr.mem_usage.append(best_d.M - best_d.mem_avail())
-                #tr.max_mem = best_d.M - best_d.mem_avail()
+def place_sketch(flow_dic):
+    print(next(iter(flow_dic)))
+    s = next(iter(flow_dic))
+    res = s.strip('][').split(', ')
+    print(type(res[0]))
+    #flow_dic contains a dictionary of OD path and flow sizes
+    
+    #tr = TestResult()
+    # best_d = None
+    # for d in od.od_path:
+    #     if d.mem_available() >= od.sketch_size:
+    #         if best_d is None or d.M - d.mem_available() < best_d.M - best_d.mem_available():
+    #             best_d = d
+    # if best_d is not None:
+    #     best_d.place_sketch(od)
+        #print("best device:", best_d.name)
 
-        #return tr
+            #tr.admit_num = 1
+            #tr.mem_usage.append(best_d.M - best_d.mem_avail())
+            #tr.max_mem = best_d.M - best_d.mem_avail()
+
+    #return tr
 
 
 
