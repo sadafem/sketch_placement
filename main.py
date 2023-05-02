@@ -39,19 +39,45 @@ class FinishTime:
         events = list()
         ARRIVAL = "ARRIVAL"
         DEPARTURE = "DEPARTURE"
+        # keep all arrival events in a heap and add them gradually
+        arrival_events = list()
         for flow in flows:
             arrival_event = Event(ARRIVAL, flow.arrival_time, flow)
-            heapq.heappush(events, arrival_event)
-        while len(events) > 0:
-            event = heapq.heappop(events)
-            if event.type == DEPARTURE:
-                #print("departure")
-                event.object.finish_time = event.value
-            #else:
-            #    print("arrival")
-                
+            arrival_events.append(arrival_event)
+        heapq.heapify(arrival_events)
+        arrival_event = heapq.heappop(arrival_events)
+        heapq.heappush(events, arrival_event)
+        departeds = [set(), set()]
+        cur_departed = 0
+        while len(events) > 0 or len(arrival_events) > 0:
+            # ignore wrong departure events
+            if len(events) > 0 and events[0].type == DEPARTURE and events[0].object.finish_time != events[0].value:
+                heapq.heappop(events)
+                continue
 
-            #print("[{}] {} at {}.".format(event.type, event.object, event.value))
+            # ignore the case if two events have the same time
+            if len(events) > 0 and events[0].type == DEPARTURE and events[0].object in departeds[0]:
+                heapq.heappop(events)
+                continue
+
+            # ignore the case if two events have the same time
+            if len(events) > 0 and events[0].type == DEPARTURE and events[0].object in departeds[1]:
+                heapq.heappop(events)
+                continue
+
+            # check if a new arrival can be added
+            if len(arrival_events) > 0 and (len(events) == 0 or events[0].value > arrival_events[0].value):
+                arrival_event = heapq.heappop(arrival_events)
+                heapq.heappush(events, arrival_event)
+
+            event = heapq.heappop(events)
+
+            if event.type == DEPARTURE:
+                departeds[cur_departed].add(event.object)
+                if len(departeds[cur_departed]) >= 10000:
+                    cur_departed = (cur_departed + 1) % 2
+                    departeds[cur_departed] = set()
+            # print("[{}] {} at {}.".format(event.type, event.object, event.value))
 
             # remove/add the flow from/to links along its path
             path = event.object.path
@@ -84,11 +110,8 @@ class FinishTime:
                             flow.modified = True
                             modified_flows.add(flow)
                             new_finish = flow.calc_finish_time(event.value, link_inc)
-                            if flow.finish_event is None:
-                                flow.finish_event = Event(DEPARTURE, new_finish, flow)
-                                heapq.heappush(events, flow.finish_event)
-                            else:
-                                flow.finish_event.value = new_finish
+                            flow.finish_event = Event(DEPARTURE, new_finish, flow)
+                            heapq.heappush(events, flow.finish_event)
                         # add all other links in the  path of flows in the current link
                         path = flow.path
                         for idx in range(len(path) - 1):
@@ -103,7 +126,7 @@ class FinishTime:
                                 else:
                                     self.G.edges[cur_e]["bottleneck"].value = link_inc_update
                 heapq.heapify(bottlenecks)
-            heapq.heapify(events)
+            #heapq.heapify(events)
 
             for flow in modified_flows:
                 flow.modified = False
@@ -195,18 +218,20 @@ def translate_bandwidth(b):
 def mytest():
     #st = time.time()
     load = 0.3
-    time = 20
-    bandwidth = "100M"    
+    sim_time = 20
+    bandwidth = "1G"    
     G = nx.Graph()
     FatTreeTopo(G)
     bw = translate_bandwidth(bandwidth)
     ft = FinishTime(G, bw)
     flows = list()
-    flows = traffic_gen(G, load, time, bandwidth)
+    flows = traffic_gen(G, load, sim_time, bandwidth)
     print("flows length", len(flows))
     # for key, value in flow_dic.items():
     #     print("key:", key, "value:", value)
+    print("Start computing finish times at {}".format(time.time()))
     ft.compute_finish_times(flows)
+    print("End computing finish times at {}".format(time.time()))
     #print(len(flows))
     f_sizes = []
     f_durations = []
@@ -216,22 +241,22 @@ def mytest():
         #print(f.finish_time - f.arrival_time)
         #print("src:", f.src.name, "dst:", f.dst.name, "Arrival:", f.arrival_time, "Finish:", f.finish_time, "Size:", f.size, "Duration:", f.finish_time - f.arrival_time)
 
-    x = np.sort(f_sizes)
-    y = 1. * np.arange(len(f_sizes)) / (len(f_sizes) - 1)
-    plt.plot(x, y)
-    plt.xlabel("Flow Size (bytes)")
-    plt.ylabel("Probability")
-    plt.show()
+    # x = np.sort(f_sizes)
+    # y = 1. * np.arange(len(f_sizes)) / (len(f_sizes) - 1)
+    # plt.plot(x, y)
+    # plt.xlabel("Flow Size (bytes)")
+    # plt.ylabel("Probability")
+    # plt.show()
 
-    d = np.sort(f_durations)
-    dd = 1. * np.arange(len(f_durations)) / (len(f_durations) - 1)
-    plt.plot(d, dd)
-    plt.xlabel("Flow Duration")
-    plt.ylabel("Probability")
-    plt.show()
+    # d = np.sort(f_durations)
+    # dd = 1. * np.arange(len(f_durations)) / (len(f_durations) - 1)
+    # plt.plot(d, dd)
+    # plt.xlabel("Flow Duration")
+    # plt.ylabel("Probability")
+    # plt.show()
 
     t = 0
-    end_time = time + t
+    end_time = sim_time + t
     count = 0
     epoch_length = 5
     lens = []
@@ -246,7 +271,7 @@ def mytest():
             
             #for p in f.path:
             #    print(p.name)
-            fp = str(f.path[1:-1])
+            fp = tuple(f.path[1:-1])
             if fp in flow_dic:
                 tmp = flow_dic.get(fp)
             else:
@@ -288,27 +313,27 @@ def mytest():
         #    aggflows.append(value)
 
         t = t + epoch_length
-    for l in lens:
-        print("flow dic length", l)
-    #for n in all_epochs_flucs:
-    #    print(n)
-    print("flucccccccccc size", len(all_epochs_flucs))
-    
-    sample_epoch = [element for sublist in all_epochs_flucs[1:-1] for element in sublist]
-    print("sample epoch len", len(sample_epoch))
-    
-    #et = time.time()
-    #elapsed_time = et - st
-    #print('Execution time:', elapsed_time, 'seconds')
-    #plt.bar(range(len(sample_epoch)), sample_epoch)
-    #plt.show()
+    #for l in lens:
+    #    print("flow dic length", l)
 
-    x = np.sort(sample_epoch)
-    y = 1. * np.arange(len(sample_epoch)) / (len(sample_epoch) - 1)
-    plt.plot(x, y)
-    plt.xlabel("Fluctuations (OD diffs in 4 consequent epochs)")
-    plt.ylabel("Probability")
-    plt.show()
+    #print("flucccccccccc size", len(all_epochs_flucs))
+    
+    #sample_epoch = [element for sublist in all_epochs_flucs[1:-1] for element in sublist]
+    #print("sample epoch len", len(sample_epoch))
+    
+
+
+    # x = np.sort(sample_epoch)
+    # y = 1. * np.arange(len(sample_epoch)) / (len(sample_epoch) - 1)
+    # plt.plot(x, y)
+    # plt.xlabel("Fluctuations (OD diffs in 4 consequent epochs)")
+    # plt.ylabel("Probability")
+    # plt.show()
+
+
+
+
+
 
     #print("number of epochs:", count) 
     #plt.bar(range(len(aggflows)), aggflows)

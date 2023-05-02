@@ -10,12 +10,12 @@ class Switch:
 
     def mem_available(self):
         a = self.M
-        for s in self.sketches:
-            a = a - s.sketch_size
+        for path, size in self.sketches.items():
+            a = a - size
         return a        
     
-    def place_sketch(self, od):
-        self.sketches[od] = od.sketch_size
+    def place_sketch(self, od_path, sketch_size):
+        self.sketches[od_path] = sketch_size
 
 
 class Host:
@@ -25,24 +25,24 @@ class Host:
         self.sketches = dict()
     def mem_available(self):
         a = self.M
-        for s in self.sketches:
-            a = a - s.sketch_size
+        for path, size in self.sketches.items():
+            a = a - size
         return a        
     
-    def place_sketch(self, od):
-        self.sketches[od] = od.sketch_size
+    def place_sketch(self, od_path, sketch_size):
+        self.sketches[od_path] = sketch_size
 
-class Sketch:
-    def __init__(self, epsilon, delta):
-        C = math.log(1/delta)
-        R = math.log(math.e/epsilon)
-        self.Q = C * R
+# class Sketch:
+#     def __init__(self, epsilon, delta):
+#         C = math.log(1/delta)
+#         R = math.log(math.e/epsilon)
+#         self.Q = C * R
 
-class OD:
-    def __init__(self, od_path, flowsize, sketch_size):
-        self.od_path = od_path
-        self.flowsize = flowsize
-        self.sketch_size = sketch_size
-        #self.Q = self.sketch.Q
+# class OD:
+#     def __init__(self, od_path, flowsize, sketch_size):
+#         self.od_path = od_path
+#         self.flowsize = flowsize
+#         self.sketch_size = sketch_size
+#         #self.Q = self.sketch.Q
 
         

@@ -49,14 +49,16 @@ class Flow:
 		return self.__str__()	
 
 	def calc_finish_time(self, cur_t, cur_bw):
+		if cur_bw == self.prev_bw:
+			return self.finish_time
 		latest_tr = (cur_t - self.prev_start) * self.prev_bw
 		self.remained_size = self.remained_size - latest_tr
-		expected_finish = cur_t + (self.remained_size / cur_bw)
+		self.finish_time = cur_t + (self.remained_size / cur_bw)
         #print("\t[CALC] {} been sending from {} to {} with {}. Sent {}. With {} will finish {} at {}."
         #      .format(self, self.prev_start, cur_t, self.prev_bw, latest_tr, cur_bw, self.remained_size, expected_finish))
 		self.prev_start = cur_t
 		self.prev_bw = cur_bw
-		return expected_finish
+		return self.finish_time
 
 		#return("%d %d %d %.9f"%(self.src, self.dst, self.size, self.t))
 
@@ -131,6 +133,7 @@ def traffic_gen(G, load, time, bw):
 			edges.append(node)
 			#print(node.name)
 	nhost = 320
+	all_sps = dict()
 	for i in range(nhost):
 
 		t = base_t
@@ -145,13 +148,14 @@ def traffic_gen(G, load, time, bw):
 			size = int(customRand.rand())
 
 			if size <= 0:
-				size = 1	
+				size = 1
 			#print("size", size)
 			#print("arrival", t * 1e-9)
 			flow = Flow(flow_id, hosts[i], hosts[dst], size, t * 1e-9)
-			print(hosts[i].name, hosts[dst].name, size)
-			paths = list(nx.all_shortest_paths(G, source=flow.src, target=flow.dst))
-			flow.path = paths[np.random.randint(0, len(paths))]
+			# print(hosts[i].name, hosts[dst].name, size)
+			if (flow.src, flow.dst) not in all_sps:
+				all_sps[(flow.src, flow.dst)] = list(nx.all_shortest_paths(G, source=flow.src, target=flow.dst))
+			flow.path = all_sps[(flow.src, flow.dst)][np.random.randint(0, len(all_sps[(flow.src, flow.dst)]))]
 			#flow.path = paths[0]
 			#print(flow.path)
 
@@ -159,6 +163,7 @@ def traffic_gen(G, load, time, bw):
 			flows.append(flow)
 
 	#flows.sort(key = lambda x: x.arrival_time)
+	all_sps = None
 	return flows
 	#for i in range(nhost):
 	#	t = base_t
