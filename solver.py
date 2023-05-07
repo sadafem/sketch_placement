@@ -1,29 +1,72 @@
-#import gurobipy as gp
-#from gurobipy import GRB
+import gurobipy as gp
+from gurobipy import GRB
 import numpy as np
 import math
 
 #flow_dic contains a dictionary of OD path and flow sizes
 def place_sketch(flow_dic):
+
+    #greeeeedy
+
     abs_err = 1000
+    num_of_ods = len(flow_dic)
+    # for od_path, od_size in flow_dic.items():
+    #     epsilon = abs_err/od_size
+    #     width = math.ceil(math.e/epsilon)
+    #     delta = 0.05
+    #     num_of_regs = math.ceil(math.log(1/delta))
+    #     sketch_size = num_of_regs * width * 4 #each register 32 bits
+    #     print("sketch size:", sketch_size)
+    #     best_d = None
+    #     for d in od_path:
+    #         if d.mem_available() >= sketch_size:
+    #             if best_d is None or d.M - d.mem_available() < best_d.M - best_d.mem_available():
+    #                 best_d = d
+    #     if best_d is not None:
+    #         d.place_sketch(od_path, sketch_size)
+    #         print("best device:", best_d.name)
+    #     else:
+    #         print("cannot place sketch")
+
+    m = gp.Model()
+
+    # Add decision variables
+    x_var = {}
+    for i in range(num_of_ods):
+        for j in range(len(list(flow_dic.keys())[i])):
+            x_var[i, j] = m.addVar(vtype=gp.GRB.BINARY, name=f'x_{i}_{j}')
+
     
-    for od_path, od_size in flow_dic.items():
-        epsilon = abs_err/od_size
+    # Set objective function
+    m.setObjective(gp.quicksum(x_var[i, j] for i in range(num_of_ods) for j in range(len(list(flow_dic.keys())[i]))), GRB.MAXIMIZE)
+
+    # Add the capacity constraints
+    for i in range(num_of_ods):
+        epsilon = abs_err/list(flow_dic.values())[i]
         width = math.ceil(math.e/epsilon)
         delta = 0.05
         num_of_regs = math.ceil(math.log(1/delta))
-        sketch_size = num_of_regs * width * 4 #each register 32 bits
-        print("sketch size:", sketch_size)
-        best_d = None
-        for d in od_path:
-            if d.mem_available() >= sketch_size:
-                if best_d is None or d.M - d.mem_available() < best_d.M - best_d.mem_available():
-                    best_d = d
-        if best_d is not None:
-            d.place_sketch(od_path, sketch_size)        
-            print("best device:", best_d.name)
-        else:
-            print("cannot place sketch")
+        sketch_size = num_of_regs * width * 4
+        m.addConstr(gp.quicksum(x_var[i, j] * sketch_size for j in range(len(list(flow_dic.keys())[i])) <= list(flow_dic.keys())[i][j].mem_available()))
+    
+    # Add the assignment constraints
+    for i in range(num_of_ods):
+        m.addConstr(gp.quicksum(x_var[i, j] for j in range(len(list(flow_dic.keys())[i]))) <= 1)
+
+
+    # Add uncertainty sets
+
+
+    # Optimize the model
+    m.optimize()
+
+    # Print the solution
+    print(f"Objective value: {m.objVal}")
+    for v in m.getVars():
+        print(f"{v.varName} = {v.x}")
+
+
+
     #print(next(iter(flow_dic)))
     #path = next(iter(flow_dic))
     # for sw in path:

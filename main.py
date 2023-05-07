@@ -298,6 +298,17 @@ def mytest():
         for key in flow_dic:
             if key in tmp_dic:
                 fluctuation_dict[key] = flow_dic[key] - tmp_dic[key]
+
+        print("--------------------------------------------------")
+        num_of_ods = len(flow_dic)
+        for i in range(num_of_ods):
+            for j in range(len(list(flow_dic.keys())[i])):
+                print(list(flow_dic.keys())[i][j].mem_available())
+
+
+
+
+
         place_sketch(flow_dic)
         #diffs = {key: flow_dic.get(key, 0) - tmp_dic.get(key, 0) for key in set(flow_dic) | set(tmp_dic)}
         #for k, v in diffs.items():
