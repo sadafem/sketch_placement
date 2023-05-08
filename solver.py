@@ -31,30 +31,50 @@ def place_sketch(flow_dic):
     m = gp.Model('Sketch Placement')
 
     # Add decision variables
-    x_var = {}
+    x_var = dict()
     for i in range(num_of_ods):
+        print(list(flow_dic.keys())[i], len(list(flow_dic.keys())[i]))
         for j in range(len(list(flow_dic.keys())[i])):
+            
             x_var[i, j] = m.addVar(vtype=gp.GRB.BINARY, name=f'x_{i}_{j}')
 
     
     # Set objective function
-    m.setObjective(gp.quicksum(x_var[i, j] for i in range(num_of_ods) for j in range(len(list(flow_dic.keys())[i]))), GRB.MAXIMIZE)
+    m.setObjective(
+        gp.quicksum(
+            x_var[i, j] 
+            for i in range(num_of_ods) 
+            for j in range(len(list(flow_dic.keys())[i]))
+        ), GRB.MAXIMIZE)
+
+    # Add the assignment constraints
+    for i in range(num_of_ods):
+        m.addConstr(
+            gp.quicksum(
+                x_var[i, j] 
+                for j in range(len(list(flow_dic.keys())[i]))
+            ) <= 1
+        )            
 
     # Add the capacity constraints
     for i in range(num_of_ods):
-        epsilon = abs_err/list(flow_dic.values())[i]
-        width = math.ceil(math.e/epsilon)
-        delta = 0.05
-        num_of_regs = math.ceil(math.log(1/delta))
-        sketch_size = num_of_regs * width * 4
-        m.addConstr(gp.quicksum(x_var[i, j] * sketch_size for j in range(len(list(flow_dic.keys())[i]))) <= list(flow_dic.keys())[i][j].mem_available() for j in range(len(list(flow_dic.keys())[i])))
+        for j in range(len(list(flow_dic.keys())[i])):
+            epsilon = abs_err/list(flow_dic.values())[i]
+            width = math.ceil(math.e/epsilon)
+            delta = 0.05
+            num_of_regs = math.ceil(math.log(1/delta))
+            sketch_size = num_of_regs * width * 4
+            m.addConstr(
+                gp.quicksum(
+                    x_var[i, j] * sketch_size 
+                    for j in range(len(list(flow_dic.keys())[i]))
+                ) <= list(flow_dic.keys())[i][j].mem_available() 
+            )
     
-    # Add the assignment constraints
-    for i in range(num_of_ods):
-        m.addConstr(gp.quicksum(x_var[i, j] for j in range(len(list(flow_dic.keys())[i]))) <= 1)
-
 
     # Add the robustness constraints
+
+
 
 
     # Optimize the model
@@ -67,29 +87,7 @@ def place_sketch(flow_dic):
 
 
 
-    #print(next(iter(flow_dic)))
-    #path = next(iter(flow_dic))
-    # for sw in path:
-    #     print(sw.name)
-    # for d in path:
-    #     print(d.mem_available()) 
-    
-    
-    #tr = TestResult()
-    # best_d = None
-    # for d in od.od_path:
-    #     if d.mem_available() >= od.sketch_size:
-    #         if best_d is None or d.M - d.mem_available() < best_d.M - best_d.mem_available():
-    #             best_d = d
-    # if best_d is not None:
-    #     best_d.place_sketch(od)
-        #print("best device:", best_d.name)
 
-            #tr.admit_num = 1
-            #tr.mem_usage.append(best_d.M - best_d.mem_avail())
-            #tr.max_mem = best_d.M - best_d.mem_avail()
-
-    #return tr
 
 
 
