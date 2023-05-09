@@ -58,17 +58,18 @@ def place_sketch(flow_dic):
 
     # Add the capacity constraints
     for i in range(num_of_ods):
-        epsilon = abs_err/list(flow_dic.values())[i]
-        width = math.ceil(math.e/epsilon)
-        delta = 0.05
-        num_of_regs = math.ceil(math.log(1/delta))
-        sketch_size = num_of_regs * width * 4
-        m.addConstr(
-            gp.quicksum(
-                x_var[i, j] * sketch_size 
-                for j in range(len(list(flow_dic.keys())[i]))
-            ) <= list(flow_dic.keys())[i][j].mem_available() for j in range(len(list(flow_dic.keys())[i]))
-        )
+        for j in range(len(list(flow_dic.keys())[i])):
+            epsilon = abs_err/list(flow_dic.values())[i]
+            width = math.ceil(math.e/epsilon)
+            delta = 0.05
+            num_of_regs = math.ceil(math.log(1/delta))
+            sketch_size = num_of_regs * width * 4
+            m.addConstr(
+                gp.quicksum(
+                    x_var[i, j] * sketch_size 
+                    for j in range(len(list(flow_dic.keys())[i]))
+                ) <= list(flow_dic.keys())[i][j].mem_available() for j in range(len(list(flow_dic.keys())[i]))
+            )
     
 
     # Add the robustness constraints
