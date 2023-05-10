@@ -7,6 +7,7 @@ from traffic_gen import *
 from matplotlib import pyplot as plt
 from itertools import chain
 import time
+from greedy import *
 
 class FinishTime:
     def __init__(self, G, bandwidth):
@@ -219,7 +220,7 @@ def mytest():
     #st = time.time()
     load = 0.3
     sim_time = 20
-    bandwidth = "1G"    
+    bandwidth = "10M"    
     G = nx.Graph()
     FatTreeTopo(G)
     bw = translate_bandwidth(bandwidth)
@@ -291,8 +292,8 @@ def mytest():
                 flow_dic[fp] = tmp + epoch_length / (f.finish_time - f.arrival_time)
                 
         #aggsize.append() 
-        for key in flow_dic.keys():
-            print("flow dic:", flow_dic.get(key, 0), "tmp dic:", tmp_dic.get(key, 0))
+        #for key in flow_dic.keys():
+        #    print("flow dic:", flow_dic.get(key, 0), "tmp dic:", tmp_dic.get(key, 0))
 
         fluctuation_dict = {}
         for key in flow_dic:
@@ -302,8 +303,8 @@ def mytest():
 
 
 
-
-        place_sketch(flow_dic)
+        greedy(flow_dic)
+        #place_sketch(flow_dic)
         #diffs = {key: flow_dic.get(key, 0) - tmp_dic.get(key, 0) for key in set(flow_dic) | set(tmp_dic)}
         #for k, v in diffs.items():
         #    print("diff", v)
