@@ -216,11 +216,12 @@ def translate_bandwidth(b):
 	if b[-1] == 'K':
 		return float(b[:-1])*1e3
 	return float(b)
+    
 def mytest():
     #st = time.time()
-    load = 0.3
+    load = 0.4
     sim_time = 20
-    bandwidth = "10M"    
+    bandwidth = "10G"
     G = nx.Graph()
     FatTreeTopo(G)
     bw = translate_bandwidth(bandwidth)
@@ -303,8 +304,8 @@ def mytest():
 
 
 
-        greedy(flow_dic)
-        #place_sketch(flow_dic)
+        #greedy(flow_dic)
+        place_sketch(flow_dic)
         #diffs = {key: flow_dic.get(key, 0) - tmp_dic.get(key, 0) for key in set(flow_dic) | set(tmp_dic)}
         #for k, v in diffs.items():
         #    print("diff", v)

@@ -4,6 +4,7 @@ def greedy(flow_dic):
     abs_err = 1000
     num_of_ods = len(flow_dic)    
     counter = 0
+    print(len(flow_dic.items()))
     for od_path, od_size in flow_dic.items():
         epsilon = abs_err/od_size
         width = math.ceil(math.e/epsilon)
@@ -22,4 +23,4 @@ def greedy(flow_dic):
         else:
             counter += 1
             #print("cannot place sketch")
-    print("counter:", counter)
+    print("number of placement failure:", counter)

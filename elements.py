@@ -6,13 +6,20 @@ class Switch:
         self.name = name
         self.dpid = dpid
         self.M = Const.SW_MEM
+        #self.H = Const.SW_HASH
         self.sketches = dict()
 
     def mem_available(self):
         a = self.M
         for path, size in self.sketches.items():
             a = a - size
-        return a        
+        return a
+    
+    # def hash_available(self):
+    #     h = self.H
+    #     for path, size in self.sketches.items():
+    #         h = h - size
+    #     return h
     
     def place_sketch(self, od_path, sketch_size):
         self.sketches[od_path] = sketch_size

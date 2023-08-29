@@ -55,7 +55,18 @@ def place_sketch(flow_dic):
             for j in range(len(list(flow_dic.keys())[i]))
         ), "memory_constraint"
     )
+    m.addConstrs(
+        (
+            gp.quicksum(
+                    x_var[i, j] * num_of_regs * list(flow_dic.values())[i]/5
+                    for j in range(len(list(flow_dic.keys())[i]))
+                ) <= 1785714240
+            for i in range(num_of_ods)
+            for j in range(len(list(flow_dic.keys())[i]))
+        ), "hash_constraint"
+    )
     
+
 
     # Add the robustness constraints
 
@@ -69,7 +80,9 @@ def place_sketch(flow_dic):
     print("number of ods:", num_of_ods)
     # Print the solution
     print(f"Objective value: {m.objVal}")
-    print("opti", num_of_ods - m.objVal)
+    print("-------------------------------------------------------")
+    print("Number of palcement failures:", num_of_ods - m.objVal)
+    print("Percent of failures:", (num_of_ods - m.objVal)/num_of_ods)
     #for v in m.getVars():
     #    print(f"{v.varName} = {v.x}")
 
