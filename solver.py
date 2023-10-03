@@ -2,6 +2,7 @@ import gurobipy as gp
 from gurobipy import GRB
 import numpy as np
 import math
+from scipy.stats import norm
 
 #we construct rate fluctuation here	
 def fluc_func(size):
@@ -14,7 +15,7 @@ def fluc_func(size):
 
 #flow_dic contains a dictionary( key:OD path  value:flow sizes )
 def place_sketch(flow_dic):
-
+    N = 0.80
     actual_sizes = []
     means = []
     abs_err = 1000
@@ -72,17 +73,6 @@ def place_sketch(flow_dic):
         )
         w+=1
 
-    # Hashing Capacity Constraint
-    w = 0
-    for d in devices:
-        m.addConstr(
-            gp.quicksum(
-                x_var[j, w] * 3 * (list(flow_dic.values())[j]/5) for j in range(num_of_ods)
-            ) <= 1785714240
-        )
-        w+=1
-
-
     # Assignment Constraint
     for j in range(num_of_ods):
         m.addConstr(
@@ -90,7 +80,48 @@ def place_sketch(flow_dic):
                 x_var[j, w] for w in range(len(devices))
             ) <= 1
         )
+    # Hashing Capacity Constraint
+    # w = 0
+    # for d in devices:
+    #     m.addConstr(
+    #         gp.quicksum(
+    #             x_var[j, w] * 3 * (list(flow_dic.values())[j]/5) for j in range(num_of_ods)
+    #         ) <= 17857142400
+    #     )
+    #     w += 1
 
+    # Linearized Deterministic Robust Constraint
+    cdf_inv = norm.ppf(N)
+    w = 0
+    for d in devices:
+       m.addConstr(
+           gp.quicksum(x_var[j, w] * 3 * means[j]/5 for j in range(num_of_ods)) + cdf_inv * gp.quicksum(x_var[j, w] * 3 * actual_sizes[j]/5 for j in range(num_of_ods)) <= 1785714240
+       )
+       w += 1
+    #m.addConstr(sum(rf[i]* alpha * x[i, s] for i in in_path) + cdf_inv * sum(math.sqrt(varf[i])* alpha * x[i, s] for i in in_path)<= B[s])
+
+    # Set objective function
+    m.setObjective(
+        gp.quicksum(
+            x_var[j, w] 
+            for j in range(num_of_ods)
+            for w in range(len(devices))
+        ), GRB.MAXIMIZE)
+    
+
+
+    # Optimize the model
+    m.optimize()
+
+    #print("greedy:", counter)
+    print("number of ods:", num_of_ods)
+    # Print the solution
+    print(f"Objective value: {m.objVal}")
+    print("-------------------------------------------------------")
+    print("Number of palcement failures:", num_of_ods - m.objVal)
+    print("Percent of failures:", (num_of_ods - m.objVal)/num_of_ods)
+    #for v in m.getVars():
+    #    print(f"{v.varName} = {v.x}")    
 
     # Add decision variables
     # number of sketches = number of ods (because we asign one sketch to monitor each OD)
@@ -101,13 +132,6 @@ def place_sketch(flow_dic):
     #         x_var[i, j] = m.addVar(vtype=gp.GRB.BINARY, name=f'x_{i}_{j}')
 
     
-    # Set objective function
-    m.setObjective(
-        gp.quicksum(
-            x_var[j, w] 
-            for j in range(num_of_ods)
-            for w in range(len(devices))
-        ), GRB.MAXIMIZE)
 
     # # Add the assignment constraints
     # for i in range(num_of_ods):
@@ -173,18 +197,7 @@ def place_sketch(flow_dic):
 
 
 
-    # Optimize the model
-    m.optimize()
 
-    #print("greedy:", counter)
-    print("number of ods:", num_of_ods)
-    # Print the solution
-    print(f"Objective value: {m.objVal}")
-    print("-------------------------------------------------------")
-    print("Number of palcement failures:", num_of_ods - m.objVal)
-    print("Percent of failures:", (num_of_ods - m.objVal)/num_of_ods)
-    #for v in m.getVars():
-    #    print(f"{v.varName} = {v.x}")
 
 
 
