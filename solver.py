@@ -3,41 +3,58 @@ from gurobipy import GRB
 import numpy as np
 import math
 
-#flow_dic contains a dictionary of OD path and flow sizes
+#we construct rate fluctuation here	
+def fluc_func(size):
+	mu = size # mean
+	sigma = 0.1*mu #0.3 mean / 0.6 mean / 0.9 mean # standard deviation
+	#actual_size = mean + variance
+	actual_size = np.random.normal(mu, sigma)
+	return mu, sigma, actual_size
+
+
+#flow_dic contains a dictionary( key:OD path  value:flow sizes )
 def place_sketch(flow_dic):
 
-    #greeeeedy
-
+    actual_sizes = []
+    means = []
     abs_err = 1000
     num_of_ods = len(flow_dic)
+    for size in flow_dic.values():
+        mu, sigma, actual_size = fluc_func(size)
+        actual_sizes.append(actual_size)
+        means.append(mu)
+
+    devices_set = set()
+    for od in flow_dic.keys():
+        for device in od:
+            devices_set.add(device)
+    devices = list(devices_set)
+    for d in devices:
+        print(d.name)
+
+    print(len(devices))
+
+
+
     m = gp.Model('Sketch Placement')
 
-    # Add decision variables
+
+    # j -> flow
+    # w -> device
     x_var = dict()
-    for i in range(num_of_ods):
-        #print(list(flow_dic.keys())[i], len(list(flow_dic.keys())[i]))
-        for j in range(len(list(flow_dic.keys())[i])):
-            x_var[i, j] = m.addVar(vtype=gp.GRB.BINARY, name=f'x_{i}_{j}')
+    for j in range(num_of_ods):
+        for w in range(len(devices)):
+            x_var[j, w] = m.addVar(vtype=gp.GRB.BINARY, name=f'x_{j}_{w}')
 
-    
-    # Set objective function
-    m.setObjective(
-        gp.quicksum(
-            x_var[i, j] 
-            for i in range(num_of_ods) 
-            for j in range(len(list(flow_dic.keys())[i]))
-        ), GRB.MAXIMIZE)
+    # First Constraint: The ones that are not related should be zero
+    for j in range(num_of_ods):
+        for w in range(len(devices)):
+            if devices[w] not in list(flow_dic.keys())[j]:
+                m.addConstr(x_var[j, w] == 0)
 
-    # Add the assignment constraints
-    for i in range(num_of_ods):
-        m.addConstr(
-            gp.quicksum(
-                x_var[i, j] 
-                for j in range(len(list(flow_dic.keys())[i]))
-            ) <= 1
-        )            
 
-    # Add the capacity constraints
+    # Memory Constraint: For all devices.
+    # Sketch_sizes has the memory requirement of each sketch
     sketch_sizes = dict()
     for i in range(num_of_ods):
         epsilon = abs_err/list(flow_dic.values())[i]
@@ -45,26 +62,109 @@ def place_sketch(flow_dic):
         delta = 0.05
         num_of_regs = math.ceil(math.log(1/delta))
         sketch_sizes[i] = num_of_regs * width * 4
-    m.addConstrs(
-        (
+
+    w = 0
+    for d in devices:
+        m.addConstr(
             gp.quicksum(
-                    x_var[i, j] * sketch_sizes[i] 
-                    for j in range(len(list(flow_dic.keys())[i]))
-                ) <= list(flow_dic.keys())[i][j].mem_available()
-            for i in range(num_of_ods)
-            for j in range(len(list(flow_dic.keys())[i]))
-        ), "memory_constraint"
-    )
-    m.addConstrs(
-        (
+                x_var[j, w] * sketch_sizes[j] for j in range(num_of_ods)
+            ) <= d.mem()
+        )
+        w+=1
+
+    # Hashing Capacity Constraint
+    w = 0
+    for d in devices:
+        m.addConstr(
             gp.quicksum(
-                    x_var[i, j] * num_of_regs * list(flow_dic.values())[i]/5
-                    for j in range(len(list(flow_dic.keys())[i]))
-                ) <= 1785714240
-            for i in range(num_of_ods)
-            for j in range(len(list(flow_dic.keys())[i]))
-        ), "hash_constraint"
-    )
+                x_var[j, w] * 3 * (list(flow_dic.values())[j]/5) for j in range(num_of_ods)
+            ) <= 1785714240
+        )
+        w+=1
+
+
+    # Assignment Constraint
+    for j in range(num_of_ods):
+        m.addConstr(
+            gp.quicksum(
+                x_var[j, w] for w in range(len(devices))
+            ) <= 1
+        )
+
+
+    # Add decision variables
+    # number of sketches = number of ods (because we asign one sketch to monitor each OD)
+    # x_var = dict()
+    # for i in range(num_of_ods):
+    #     #print(list(flow_dic.keys())[i], len(list(flow_dic.keys())[i]))
+    #     for j in range(len(list(flow_dic.keys())[i])): #number of devices in each OD
+    #         x_var[i, j] = m.addVar(vtype=gp.GRB.BINARY, name=f'x_{i}_{j}')
+
+    
+    # Set objective function
+    m.setObjective(
+        gp.quicksum(
+            x_var[j, w] 
+            for j in range(num_of_ods)
+            for w in range(len(devices))
+        ), GRB.MAXIMIZE)
+
+    # # Add the assignment constraints
+    # for i in range(num_of_ods):
+    #     m.addConstr(
+    #         gp.quicksum(
+    #             x_var[i, j] 
+    #             for j in range(len(list(flow_dic.keys())[i]))
+    #         ) <= 1
+    #     )            
+
+    
+
+    # flow_dic = {[a,b,c]: 100, [a,c]: 120}
+    # x[0,0] -> 0:a
+    # x[0,1] -> 1:b
+    # x[0,2] -> 2:c
+    # x[1,0] -> 0:a
+    # x[1,1] -> 1:c
+    # 1st constraint
+    # NEW:
+    
+    
+
+    # OLD:
+    # m.addConstrs(
+    #     (
+    #         gp.quicksum(
+    #                 x_var[i, j] * sketch_sizes[i]
+    #                 for j in range(len(list(flow_dic.keys())[i]))
+    #             ) <= list(flow_dic.keys())[i][j].mem()
+    #         for i in range(num_of_ods)
+    #         for j in range(len(list(flow_dic.keys())[i]))
+    #     ), "memory_constraint"
+    # )
+
+
+
+    # for j in range(len(list(flow_dic.keys())[i])):    
+    #     m.addConstrs(
+    #         (
+    #             gp.quicksum(
+    #                     x_var[i, j] * num_of_regs * list(flow_dic.values())[i]/5
+    #                     for i in range(num_of_ods)
+    #                 ) <= 1785714240    
+    #         ), "hash_constraint"
+    #     )
+    # hash_per_packet = num_of_regs    
+    # m.addConstrs(
+    #     (
+    #         gp.quicksum(
+    #                 x_var[i, j] * hash_per_packet * list(flow_dic.values())[i]/1000000000
+    #                 for j in range(len(list(flow_dic.keys())[i]))
+    #             ) <= 1785714240
+    #         for i in range(num_of_ods)
+    #         for j in range(len(list(flow_dic.keys())[i]))
+    #     ), "hash_constraint"
+    # )
     
 
 

@@ -8,12 +8,14 @@ class Switch:
         self.M = Const.SW_MEM
         #self.H = Const.SW_HASH
         self.sketches = dict()
+    def mem(self):
+        return self.M
 
-    def mem_available(self):
-        a = self.M
-        for path, size in self.sketches.items():
-            a = a - size
-        return a
+    # def mem_available(self):
+    #     a = self.M
+    #     for path, size in self.sketches.items():
+    #         a = a - size
+    #     return a
     
     # def hash_available(self):
     #     h = self.H

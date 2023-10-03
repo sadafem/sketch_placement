@@ -78,6 +78,9 @@ def translate_bandwidth(b):
 def poisson(lam):
 	return -math.log(1-random.random())*lam
 
+
+
+
 def traffic_gen(G, load, time, bw):
 	port = 80
 	parser = OptionParser()
@@ -119,6 +122,7 @@ def traffic_gen(G, load, time, bw):
 		sys.exit(0)
 
 	avg = customRand.getAvg()
+	print("averageee", avg)
 	avg_inter_arrival = 1/(bandwidth*load/8./avg)*1000000000
 	#print(avg_inter_arrival)
 	flow_id = 1
@@ -146,7 +150,7 @@ def traffic_gen(G, load, time, bw):
 			if (t > time + base_t):
 				break
 			size = int(customRand.rand())
-
+			#mu, sigma, actual_size = fluc_func(size)
 			if size <= 0:
 				size = 1
 			#print("size", size)
