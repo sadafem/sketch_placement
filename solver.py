@@ -18,12 +18,14 @@ def place_sketch(flow_dic):
     N = 0.80
     actual_sizes = []
     means = []
+    sigmas = []
     abs_err = 1000
     num_of_ods = len(flow_dic)
     for size in flow_dic.values():
         mu, sigma, actual_size = fluc_func(size)
         actual_sizes.append(actual_size)
         means.append(mu)
+        sigmas.append(sigma)
 
     devices_set = set()
     for od in flow_dic.keys():
@@ -58,7 +60,7 @@ def place_sketch(flow_dic):
     # Sketch_sizes has the memory requirement of each sketch
     sketch_sizes = dict()
     for i in range(num_of_ods):
-        epsilon = abs_err/list(flow_dic.values())[i]
+        epsilon = abs_err/actual_sizes[i]
         width = math.ceil(math.e/epsilon)
         delta = 0.05
         num_of_regs = math.ceil(math.log(1/delta))
@@ -81,23 +83,23 @@ def place_sketch(flow_dic):
             ) <= 1
         )
     # Hashing Capacity Constraint
-    # w = 0
-    # for d in devices:
-    #     m.addConstr(
-    #         gp.quicksum(
-    #             x_var[j, w] * 3 * (list(flow_dic.values())[j]/5) for j in range(num_of_ods)
-    #         ) <= 17857142400
-    #     )
-    #     w += 1
-
-    # Linearized Deterministic Robust Constraint
-    cdf_inv = norm.ppf(N)
     w = 0
     for d in devices:
-       m.addConstr(
-           gp.quicksum(x_var[j, w] * 3 * means[j]/5 for j in range(num_of_ods)) + cdf_inv * gp.quicksum(x_var[j, w] * 3 * actual_sizes[j]/5 for j in range(num_of_ods)) <= 1785714240
-       )
-       w += 1
+        m.addConstr(
+            gp.quicksum(
+                x_var[j, w] * 3 * (actual_sizes[j]/5) for j in range(num_of_ods)
+            ) <= 1785714240
+        )
+        w += 1
+
+    # Linearized Deterministic Robust Constraint
+    # cdf_inv = norm.ppf(N)
+    # w = 0
+    # for d in devices:
+    #    m.addConstr(
+    #        gp.quicksum(x_var[j, w] * 3 * means[j]/5 for j in range(num_of_ods)) + cdf_inv * gp.quicksum(x_var[j, w] * 3 * sigmas[j]/5 for j in range(num_of_ods)) <= 1785714240
+    #    )
+    #    w += 1
     #m.addConstr(sum(rf[i]* alpha * x[i, s] for i in in_path) + cdf_inv * sum(math.sqrt(varf[i])* alpha * x[i, s] for i in in_path)<= B[s])
 
     # Set objective function
