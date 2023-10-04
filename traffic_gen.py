@@ -122,7 +122,6 @@ def traffic_gen(G, load, time, bw):
 		sys.exit(0)
 
 	avg = customRand.getAvg()
-	print("averageee", avg)
 	avg_inter_arrival = 1/(bandwidth*load/8./avg)*1000000000
 	#print(avg_inter_arrival)
 	flow_id = 1

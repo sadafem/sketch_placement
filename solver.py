@@ -15,7 +15,7 @@ def fluc_func(size):
 
 #flow_dic contains a dictionary( key:OD path  value:flow sizes )
 def place_sketch(flow_dic):
-    N = 0.80
+    N = 0.2
     actual_sizes = []
     means = []
     sigmas = []
@@ -65,6 +65,7 @@ def place_sketch(flow_dic):
         delta = 0.05
         num_of_regs = math.ceil(math.log(1/delta))
         sketch_sizes[i] = num_of_regs * width * 4
+        print("sketch size", sketch_sizes[i])
 
     w = 0
     for d in devices:
@@ -88,7 +89,7 @@ def place_sketch(flow_dic):
         m.addConstr(
             gp.quicksum(
                 x_var[j, w] * 3 * (actual_sizes[j]/5) for j in range(num_of_ods)
-            ) <= 1785714240
+            ) <= 17857140
         )
         w += 1
 
@@ -110,7 +111,7 @@ def place_sketch(flow_dic):
             for w in range(len(devices))
         ), GRB.MAXIMIZE)
     
-
+    m.setParam('MIPGap', 0.05)
 
     # Optimize the model
     m.optimize()

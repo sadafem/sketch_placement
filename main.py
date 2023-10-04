@@ -221,7 +221,7 @@ def mytest():
     #st = time.time()
     load = 0.2
     sim_time = 20
-    bandwidth = "10G"
+    bandwidth = "1G"
     G = nx.Graph()
     FatTreeTopo(G)
     bw = translate_bandwidth(bandwidth)
@@ -239,6 +239,7 @@ def mytest():
     f_durations = []
     for f in flows:
         f_sizes.append(f.size)
+        print("flow size", f.size)
         f_durations.append((f.finish_time - f.arrival_time))
         #print(f.finish_time - f.arrival_time)
         #print("src:", f.src.name, "dst:", f.dst.name, "Arrival:", f.arrival_time, "Finish:", f.finish_time, "Size:", f.size, "Duration:", f.finish_time - f.arrival_time)
