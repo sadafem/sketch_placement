@@ -100,7 +100,7 @@ def traffic_gen(G, load, time, bw):
 	#load = float(options.load)
 	bandwidth = translate_bandwidth(bw)
 	print("bw", bandwidth)
-	print(time)
+	#print(time)
 	time = float(time)*1e9 # translates to ns
 	if bandwidth == None:
 		print("bandwidth format incorrect")

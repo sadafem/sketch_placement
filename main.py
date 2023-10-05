@@ -239,7 +239,7 @@ def mytest():
     f_durations = []
     for f in flows:
         f_sizes.append(f.size)
-        print("flow size", f.size)
+        #print("flow size", f.size)
         f_durations.append((f.finish_time - f.arrival_time))
         #print(f.finish_time - f.arrival_time)
         #print("src:", f.src.name, "dst:", f.dst.name, "Arrival:", f.arrival_time, "Finish:", f.finish_time, "Size:", f.size, "Duration:", f.finish_time - f.arrival_time)
@@ -257,7 +257,7 @@ def mytest():
     # plt.xlabel("Flow Duration")
     # plt.ylabel("Probability")
     # plt.show()
-
+    failures = []
     t = 0
     end_time = sim_time + t
     count = 0
@@ -304,9 +304,10 @@ def mytest():
 
 
 
-
+        
         #greedy(flow_dic)
-        place_sketch(flow_dic)
+        failure = place_sketch(flow_dic)
+        failures.append(failure)
         #diffs = {key: flow_dic.get(key, 0) - tmp_dic.get(key, 0) for key in set(flow_dic) | set(tmp_dic)}
         #for k, v in diffs.items():
         #    print("diff", v)
@@ -328,7 +329,7 @@ def mytest():
     
     #sample_epoch = [element for sublist in all_epochs_flucs[1:-1] for element in sublist]
     #print("sample epoch len", len(sample_epoch))
-    
+    print("failuresssss:", failures)
 
 
     # x = np.sort(sample_epoch)

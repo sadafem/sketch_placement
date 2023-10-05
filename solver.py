@@ -4,6 +4,7 @@ import numpy as np
 import math
 from scipy.stats import norm
 
+HASH_CAPACITY = 1785714000
 #we construct rate fluctuation here	
 def fluc_func(size):
 	mu = size # mean
@@ -15,7 +16,7 @@ def fluc_func(size):
 
 #flow_dic contains a dictionary( key:OD path  value:flow sizes )
 def place_sketch(flow_dic):
-    N = 0.2
+    N = 0.8
     actual_sizes = []
     means = []
     sigmas = []
@@ -32,10 +33,10 @@ def place_sketch(flow_dic):
         for device in od:
             devices_set.add(device)
     devices = list(devices_set)
-    for d in devices:
-        print(d.name)
+    #for d in devices:
+        #print(d.name)
 
-    print(len(devices))
+    print("number of devices", len(devices))
 
 
 
@@ -65,7 +66,7 @@ def place_sketch(flow_dic):
         delta = 0.05
         num_of_regs = math.ceil(math.log(1/delta))
         sketch_sizes[i] = num_of_regs * width * 4
-        print("sketch size", sketch_sizes[i])
+        #print("sketch size", sketch_sizes[i])
 
     w = 0
     for d in devices:
@@ -84,23 +85,23 @@ def place_sketch(flow_dic):
             ) <= 1
         )
     # Hashing Capacity Constraint
-    w = 0
-    for d in devices:
-        m.addConstr(
-            gp.quicksum(
-                x_var[j, w] * 3 * (actual_sizes[j]/5) for j in range(num_of_ods)
-            ) <= 17857140
-        )
-        w += 1
-
-    # Linearized Deterministic Robust Constraint
-    # cdf_inv = norm.ppf(N)
     # w = 0
     # for d in devices:
-    #    m.addConstr(
-    #        gp.quicksum(x_var[j, w] * 3 * means[j]/5 for j in range(num_of_ods)) + cdf_inv * gp.quicksum(x_var[j, w] * 3 * sigmas[j]/5 for j in range(num_of_ods)) <= 1785714240
-    #    )
-    #    w += 1
+    #     m.addConstr(
+    #         gp.quicksum(
+    #             x_var[j, w] * 3 * (actual_sizes[j]/5) for j in range(num_of_ods)
+    #         ) <= HASH_CAPACITY
+    #     )
+    #     w += 1
+
+    #Linearized Deterministic Robust Constraint
+    cdf_inv = norm.ppf(N)
+    w = 0
+    for d in devices:
+       m.addConstr(
+           gp.quicksum(x_var[j, w] * 3 * means[j]/5 for j in range(num_of_ods)) + cdf_inv * gp.quicksum(x_var[j, w] * 3 * sigmas[j]/5 for j in range(num_of_ods)) <= HASH_CAPACITY
+       )
+       w += 1
     #m.addConstr(sum(rf[i]* alpha * x[i, s] for i in in_path) + cdf_inv * sum(math.sqrt(varf[i])* alpha * x[i, s] for i in in_path)<= B[s])
 
     # Set objective function
@@ -120,9 +121,10 @@ def place_sketch(flow_dic):
     print("number of ods:", num_of_ods)
     # Print the solution
     print(f"Objective value: {m.objVal}")
-    print("-------------------------------------------------------")
     print("Number of palcement failures:", num_of_ods - m.objVal)
     print("Percent of failures:", (num_of_ods - m.objVal)/num_of_ods)
+    print("-------------------------------------------------------")
+    return (num_of_ods - m.objVal)/num_of_ods
     #for v in m.getVars():
     #    print(f"{v.varName} = {v.x}")    
 
