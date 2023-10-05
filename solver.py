@@ -4,11 +4,11 @@ import numpy as np
 import math
 from scipy.stats import norm
 
-HASH_CAPACITY = 1785714000
+HASH_CAPACITY = 178571400
 #we construct rate fluctuation here	
 def fluc_func(size):
 	mu = size # mean
-	sigma = 0.1*mu #0.3 mean / 0.6 mean / 0.9 mean # standard deviation
+	sigma = 0.5*mu #0.3 mean / 0.6 mean / 0.9 mean # standard deviation
 	#actual_size = mean + variance
 	actual_size = np.random.normal(mu, sigma)
 	return mu, sigma, actual_size
@@ -85,23 +85,23 @@ def place_sketch(flow_dic):
             ) <= 1
         )
     # Hashing Capacity Constraint
-    # w = 0
-    # for d in devices:
-    #     m.addConstr(
-    #         gp.quicksum(
-    #             x_var[j, w] * 3 * (actual_sizes[j]/5) for j in range(num_of_ods)
-    #         ) <= HASH_CAPACITY
-    #     )
-    #     w += 1
-
-    #Linearized Deterministic Robust Constraint
-    cdf_inv = norm.ppf(N)
     w = 0
     for d in devices:
-       m.addConstr(
-           gp.quicksum(x_var[j, w] * 3 * means[j]/5 for j in range(num_of_ods)) + cdf_inv * gp.quicksum(x_var[j, w] * 3 * sigmas[j]/5 for j in range(num_of_ods)) <= HASH_CAPACITY
-       )
-       w += 1
+        m.addConstr(
+            gp.quicksum(
+                x_var[j, w] * 3 * (actual_sizes[j]/5) for j in range(num_of_ods)
+            ) <= HASH_CAPACITY
+        )
+        w += 1
+
+    #Linearized Deterministic Robust Constraint
+    # cdf_inv = norm.ppf(N)
+    # w = 0
+    # for d in devices:
+    #    m.addConstr(
+    #        gp.quicksum(x_var[j, w] * 3 * means[j]/5 for j in range(num_of_ods)) + cdf_inv * gp.quicksum(x_var[j, w] * 3 * sigmas[j]/5 for j in range(num_of_ods)) <= HASH_CAPACITY
+    #    )
+    #    w += 1
     #m.addConstr(sum(rf[i]* alpha * x[i, s] for i in in_path) + cdf_inv * sum(math.sqrt(varf[i])* alpha * x[i, s] for i in in_path)<= B[s])
 
     # Set objective function
