@@ -4,11 +4,11 @@ import numpy as np
 import math
 from scipy.stats import norm
 
-HASH_CAPACITY = 178571400
+HASH_CAPACITY = 1785714000
 #we construct rate fluctuation here	
 def fluc_func(size):
 	mu = size # mean
-	sigma = 0.5*mu #0.3 mean / 0.6 mean / 0.9 mean # standard deviation
+	sigma = 0.3*mu #0.3 mean / 0.6 mean / 0.9 mean # standard deviation
 	#actual_size = mean + variance
 	actual_size = np.random.normal(mu, sigma)
 	return mu, sigma, actual_size
@@ -16,7 +16,7 @@ def fluc_func(size):
 
 #flow_dic contains a dictionary( key:OD path  value:flow sizes )
 def place_sketch(flow_dic):
-    N = 0.8
+    N = 0.7
     actual_sizes = []
     means = []
     sigmas = []
@@ -66,7 +66,7 @@ def place_sketch(flow_dic):
         delta = 0.05
         num_of_regs = math.ceil(math.log(1/delta))
         sketch_sizes[i] = num_of_regs * width * 4
-        #print("sketch size", sketch_sizes[i])
+        print("sketch size", sketch_sizes[i])
 
     w = 0
     for d in devices:
@@ -85,23 +85,23 @@ def place_sketch(flow_dic):
             ) <= 1
         )
     # Hashing Capacity Constraint
-    w = 0
-    for d in devices:
-        m.addConstr(
-            gp.quicksum(
-                x_var[j, w] * 3 * (actual_sizes[j]/5) for j in range(num_of_ods)
-            ) <= HASH_CAPACITY
-        )
-        w += 1
-
-    #Linearized Deterministic Robust Constraint
-    # cdf_inv = norm.ppf(N)
     # w = 0
     # for d in devices:
-    #    m.addConstr(
-    #        gp.quicksum(x_var[j, w] * 3 * means[j]/5 for j in range(num_of_ods)) + cdf_inv * gp.quicksum(x_var[j, w] * 3 * sigmas[j]/5 for j in range(num_of_ods)) <= HASH_CAPACITY
-    #    )
-    #    w += 1
+    #     m.addConstr(
+    #         gp.quicksum(
+    #             x_var[j, w] * 3 * (actual_sizes[j]/5) for j in range(num_of_ods)
+    #         ) <= HASH_CAPACITY
+    #     )
+    #     w += 1
+
+    #Linearized Deterministic Robust Constraint
+    cdf_inv = norm.ppf(N)
+    w = 0
+    for d in devices:
+       m.addConstr(
+           gp.quicksum(x_var[j, w] * 3 * means[j]/5 for j in range(num_of_ods)) + cdf_inv * gp.quicksum(x_var[j, w] * 3 * sigmas[j]/5 for j in range(num_of_ods)) <= HASH_CAPACITY
+       )
+       w += 1
     #m.addConstr(sum(rf[i]* alpha * x[i, s] for i in in_path) + cdf_inv * sum(math.sqrt(varf[i])* alpha * x[i, s] for i in in_path)<= B[s])
 
     # Set objective function
@@ -116,7 +116,9 @@ def place_sketch(flow_dic):
 
     # Optimize the model
     m.optimize()
-
+    #for v in m.getVars():
+    #    print(f"{v.VarName} = {v.X}")
+    #print(xx_var)
     #print("greedy:", counter)
     print("number of ods:", num_of_ods)
     # Print the solution

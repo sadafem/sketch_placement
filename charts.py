@@ -38,11 +38,11 @@ y5 = [0.48, 0.48, 0.48, 0.48, 0.48, 0.48]
 fig, ax = plt.subplots(figsize=(8, 6))
 
 # Plot the data with labels for the legend
-ax.plot(x, y1, label='Max hash /10', color='blue', linewidth=2)
-ax.plot(x, y5, label='Max hash / 5', color='black', linewidth=2)
-ax.plot(x, y4, label='Max hash / 2', color='orange', linewidth=2)
-ax.plot(x, y2, label='Max hash', color='red', linewidth=2)
-ax.plot(x, y3, label='Max hash * 10', color='green', linewidth=2)
+ax.plot(x, y1, label='Max hash capacity /10', color='blue', linewidth=2)
+ax.plot(x, y5, label='Max hash capacity /5', color='black', linewidth=2)
+ax.plot(x, y4, label='Max hash capacity /2', color='orange', linewidth=2)
+ax.plot(x, y2, label='Max hash capacity', color='red', linewidth=2)
+ax.plot(x, y3, label='Max hash capacity * 10', color='green', linewidth=2)
 
 
 ax.set_xticks([4, 8, 12, 16, 20, 24])
@@ -56,10 +56,10 @@ ax.set_ylabel('Percentage of placement failure', fontsize=14)
 ax.grid(True, which='both', linestyle='--', linewidth=0.5)
 
 # Set the legend
-ax.legend(loc='upper right', fontsize=12)
+ax.legend(fontsize=12)
 
 # Save the figure in high resolution
-fig.savefig('sample_plot.png', dpi=300, bbox_inches='tight')
+fig.savefig('mem_hash.png', dpi=300, bbox_inches='tight')
 
 # Display the plot
 plt.show()

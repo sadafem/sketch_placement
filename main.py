@@ -221,7 +221,7 @@ def mytest():
     #st = time.time()
     load = 0.2
     sim_time = 20
-    bandwidth = "10G"
+    bandwidth = "1G"
     G = nx.Graph()
     FatTreeTopo(G)
     bw = translate_bandwidth(bandwidth)
