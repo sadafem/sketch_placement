@@ -116,8 +116,8 @@ def place_sketch(flow_dic):
 
     # Optimize the model
     m.optimize()
-    #for v in m.getVars():
-    #    print(f"{v.VarName} = {v.X}")
+    decision_vars = {v.varName: v.X for v in m.getVars()}
+
     #print(xx_var)
     #print("greedy:", counter)
     print("number of ods:", num_of_ods)
@@ -126,7 +126,7 @@ def place_sketch(flow_dic):
     print("Number of palcement failures:", num_of_ods - m.objVal)
     print("Percent of failures:", (num_of_ods - m.objVal)/num_of_ods)
     print("-------------------------------------------------------")
-    return (num_of_ods - m.objVal)/num_of_ods
+    return decision_vars, (num_of_ods - m.objVal)/num_of_ods
     #for v in m.getVars():
     #    print(f"{v.varName} = {v.x}")    
 

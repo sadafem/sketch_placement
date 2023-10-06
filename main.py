@@ -1,6 +1,7 @@
 import numpy as np
 import networkx as nx
 from elements import *
+from optimization2 import *
 import matplotlib.pyplot as plt
 from solver import *
 from traffic_gen import *
@@ -306,8 +307,10 @@ def mytest():
 
         
         #greedy(flow_dic)
-        failure = place_sketch(flow_dic)
+        decision_vars, failure = place_sketch(flow_dic)
         failures.append(failure)
+        check_feasibility(decision_vars)
+
         #diffs = {key: flow_dic.get(key, 0) - tmp_dic.get(key, 0) for key in set(flow_dic) | set(tmp_dic)}
         #for k, v in diffs.items():
         #    print("diff", v)
