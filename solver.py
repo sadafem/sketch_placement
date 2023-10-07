@@ -3,6 +3,7 @@ from gurobipy import GRB
 import numpy as np
 import math
 from scipy.stats import norm
+import json
 
 HASH_CAPACITY = 1785714000
 #we construct rate fluctuation here	
@@ -66,7 +67,7 @@ def place_sketch(flow_dic):
         delta = 0.05
         num_of_regs = math.ceil(math.log(1/delta))
         sketch_sizes[i] = num_of_regs * width * 4
-        print("sketch size", sketch_sizes[i])
+        #print("sketch size", sketch_sizes[i])
 
     w = 0
     for d in devices:
@@ -116,8 +117,14 @@ def place_sketch(flow_dic):
 
     # Optimize the model
     m.optimize()
-    decision_vars = {v.varName: v.X for v in m.getVars()}
 
+    decision_vars = {v.varName: v.X for v in m.getVars()}
+    #with open('data.json', 'w') as f:
+    #    json.dump(decision_vars, f)
+
+    #str_dict = {str(key): value for key, value in flow_dic.items()}
+    #with open('flows.json', 'w') as f:
+    #    json.dump(str_dict, f)
     #print(xx_var)
     #print("greedy:", counter)
     print("number of ods:", num_of_ods)

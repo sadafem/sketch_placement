@@ -266,6 +266,7 @@ def mytest():
     lens = []
     all_epochs_flucs = []
     tmp_dic = {}
+    counter = 1
     while(t <= end_time):
         flow_dic = {}
         diff = {}
@@ -303,14 +304,16 @@ def mytest():
             if key in tmp_dic:
                 fluctuation_dict[key] = flow_dic[key] - tmp_dic[key]
 
-
-
-        
+        decision_vars = {}
+        if counter == 1:
+            decision_vars, failure = place_sketch(flow_dic)
+        else:
+            check_feasibility(decision_vars, flow_dic)
         #greedy(flow_dic)
-        decision_vars, failure = place_sketch(flow_dic)
-        failures.append(failure)
-        check_feasibility(decision_vars)
-
+        counter += 1
+        #failures.append(failure)
+        #
+        #break
         #diffs = {key: flow_dic.get(key, 0) - tmp_dic.get(key, 0) for key in set(flow_dic) | set(tmp_dic)}
         #for k, v in diffs.items():
         #    print("diff", v)
