@@ -220,7 +220,7 @@ def translate_bandwidth(b):
     
 def mytest():
     #st = time.time()
-    load = 0.2
+    load = 0.9
     sim_time = 20
     bandwidth = "1G"
     G = nx.Graph()
@@ -304,14 +304,17 @@ def mytest():
             if key in tmp_dic:
                 fluctuation_dict[key] = flow_dic[key] - tmp_dic[key]
 
-        decision_vars = {}
-        if counter == 1:
-            decision_vars, failure = place_sketch(flow_dic)
-        else:
-            check_feasibility(decision_vars, flow_dic)
+    
+        #if counter == 1:
+        decision_vars, failure = place_sketch(flow_dic)
+            #print("number of flows in first epoch", len(flow_dic))
+        #else:
+            #print("number of flows in next epochs", len(flow_dic))
+            #check_feasibility(decision_vars, flow_dic)
+            
         #greedy(flow_dic)
-        counter += 1
-        #failures.append(failure)
+        #counter += 1
+        failures.append(failure)
         #
         #break
         #diffs = {key: flow_dic.get(key, 0) - tmp_dic.get(key, 0) for key in set(flow_dic) | set(tmp_dic)}

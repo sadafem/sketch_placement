@@ -9,7 +9,7 @@ HASH_CAPACITY = 1785714000
 #we construct rate fluctuation here	
 def fluc_func(size):
 	mu = size # mean
-	sigma = 0.3*mu #0.3 mean / 0.6 mean / 0.9 mean # standard deviation
+	sigma = 0.6 * mu #0.3 mean / 0.6 mean / 0.9 mean # standard deviation
 	#actual_size = mean + variance
 	actual_size = np.random.normal(mu, sigma)
 	return mu, sigma, actual_size
@@ -86,23 +86,23 @@ def place_sketch(flow_dic):
             ) <= 1
         )
     # Hashing Capacity Constraint
-    # w = 0
-    # for d in devices:
-    #     m.addConstr(
-    #         gp.quicksum(
-    #             x_var[j, w] * 3 * (actual_sizes[j]/5) for j in range(num_of_ods)
-    #         ) <= HASH_CAPACITY
-    #     )
-    #     w += 1
-
-    #Linearized Deterministic Robust Constraint
-    cdf_inv = norm.ppf(N)
     w = 0
     for d in devices:
-       m.addConstr(
-           gp.quicksum(x_var[j, w] * 3 * means[j]/5 for j in range(num_of_ods)) + cdf_inv * gp.quicksum(x_var[j, w] * 3 * sigmas[j]/5 for j in range(num_of_ods)) <= HASH_CAPACITY
-       )
-       w += 1
+        m.addConstr(
+            gp.quicksum(
+                x_var[j, w] * 3 * (actual_sizes[j]/5) for j in range(num_of_ods)
+            ) <= HASH_CAPACITY
+        )
+        w += 1
+
+    # #Linearized Deterministic Robust Constraint
+    # cdf_inv = norm.ppf(N)
+    # w = 0
+    # for d in devices:
+    #    m.addConstr(
+    #        gp.quicksum(x_var[j, w] * 3 * means[j]/5 for j in range(num_of_ods)) + cdf_inv * gp.quicksum(x_var[j, w] * 3 * sigmas[j]/5 for j in range(num_of_ods)) <= HASH_CAPACITY
+    #    )
+    #    w += 1
     #m.addConstr(sum(rf[i]* alpha * x[i, s] for i in in_path) + cdf_inv * sum(math.sqrt(varf[i])* alpha * x[i, s] for i in in_path)<= B[s])
 
     # Set objective function
@@ -117,8 +117,10 @@ def place_sketch(flow_dic):
 
     # Optimize the model
     m.optimize()
+    #print(x_var[1,1])
 
-    decision_vars = {v.varName: v.X for v in m.getVars()}
+    #decision_vars = {v.varName: v.X for v in m.getVars()}
+    decision_vars = x_var
     #with open('data.json', 'w') as f:
     #    json.dump(decision_vars, f)
 
@@ -133,9 +135,62 @@ def place_sketch(flow_dic):
     print("Number of palcement failures:", num_of_ods - m.objVal)
     print("Percent of failures:", (num_of_ods - m.objVal)/num_of_ods)
     print("-------------------------------------------------------")
+
+    m2 = gp.Model("fixed_variable_model")
+
+    xx_var = dict()
+    for j in range(num_of_ods):
+        for w in range(len(devices)):
+            xx_var[j, w] = m2.addVar(vtype=gp.GRB.BINARY, name=f'xx_{j}_{w}', lb=x_var[j,w].X, ub=x_var[j,w].X)
+
+    w = 0
+    for d in devices:
+        m2.addConstr(
+            gp.quicksum(
+                xx_var[j, w] * sketch_sizes[j] for j in range(num_of_ods)
+            ) <= d.mem()
+        )
+        w+=1
+
+    # Assignment Constraint
+    for j in range(num_of_ods):
+        m2.addConstr(
+            gp.quicksum(
+                xx_var[j, w] for w in range(len(devices))
+            ) <= 1
+        )    
+
+    # Hashing Capacity Constraint
+    w = 0
+    for d in devices:
+        m2.addConstr(
+            gp.quicksum(
+                xx_var[j, w] * 3 * (np.random.normal(means[j], sigmas[j])/5) for j in range(num_of_ods)
+            ) <= HASH_CAPACITY
+        )
+        w += 1        
+    m2.setObjective(
+        gp.quicksum(
+            xx_var[j, w] 
+            for j in range(num_of_ods)
+            for w in range(len(devices))
+        ), GRB.MAXIMIZE)
+    
+
+    m2.optimize()
+    if m2.status == GRB.Status.INFEASIBLE:
+        print("The model is infeasible")
+    else:
+        print("The model is feasible")
+
     return decision_vars, (num_of_ods - m.objVal)/num_of_ods
     #for v in m.getVars():
     #    print(f"{v.varName} = {v.x}")    
+
+
+
+
+
 
     # Add decision variables
     # number of sketches = number of ods (because we asign one sketch to monitor each OD)

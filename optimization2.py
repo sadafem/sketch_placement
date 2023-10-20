@@ -13,9 +13,13 @@ def fluc_func(size):
 	#actual_size = mean + variance
 	actual_size = np.random.normal(mu, sigma)
 	return mu, sigma, actual_size
-
+    
+#decision_vars is a dectionary of decision variables from a solved optimization problem
 def check_feasibility(decision_vars, flow_dic):
-    #decision_vars is a dectionary of decision variables from a solved optimization problem
+    # print("hiiiiiiiiiiiiiiiiii")
+    # for key, value in decision_vars.items():
+    #     print(f"{key}: {value}")
+    x_var = decision_vars
     N = 0.7
     actual_sizes = []
     means = []
@@ -44,17 +48,16 @@ def check_feasibility(decision_vars, flow_dic):
     #    for w in range(len(devices)):
     #        x_var[j, w] = m.addVar(vtype=gp.GRB.BINARY, lb=decision_vars, ub=decision_vars, name=f'x_{j}_{w}')
 
-    x_var = {}
-    for key in decision_vars:
-        x_var[key] = m.addVar(vtype=GRB.BINARY, name=f"{key}", start=decision_vars[key])
+    #x_var = {}
+    # for key in decision_vars:
+    #     key = m.addVar(vtype=GRB.BINARY, name=f"{key}", start=decision_vars[key])
+
+    # x_var = dict()
+    # for j in range(num_of_ods):
+    #    for w in range(len(devices)):
+    #        x_var[j, w] = m.addVar(vtype=gp.GRB.BINARY, name=f'x_{j}_{w}')
 
     #x_fixed = m.addVar(vtype=gp.GRB.BINARY, lb=decision_vars, ub=decision_vars, name="x_fixed")
-
-   # First Constraint: The ones that are not related should be zero
-    for j in range(num_of_ods):
-        for w in range(len(devices)):
-            if devices[w] not in list(flow_dic.keys())[j]:
-                m.addConstr(x_var[j, w] == 0)
 
 
     # Memory Constraint: For all devices.
