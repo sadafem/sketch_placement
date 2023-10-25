@@ -220,8 +220,9 @@ def translate_bandwidth(b):
     
 def mytest():
     #st = time.time()
-    load = 0.9
+    load = 0.8
     sim_time = 20
+    epoch_length = 1
     bandwidth = "1G"
     G = nx.Graph()
     FatTreeTopo(G)
@@ -262,7 +263,6 @@ def mytest():
     t = 0
     end_time = sim_time + t
     count = 0
-    epoch_length = 1
     lens = []
     all_epochs_flucs = []
     tmp_dic = {}
@@ -296,6 +296,14 @@ def mytest():
                 #print("4", "arrival:", f.arrival_time, "finish:", f.finish_time, "size:", f.size)
                 flow_dic[fp] = tmp + epoch_length / (f.finish_time - f.arrival_time)
                 
+        
+        for key, value in flow_dic.items():
+           aggflows.append(value)
+        
+        
+        
+        
+        
         #aggsize.append() 
         #for key in flow_dic.keys():
         #    print("flow dic:", flow_dic.get(key, 0), "tmp dic:", tmp_dic.get(key, 0))
@@ -328,8 +336,7 @@ def mytest():
             tmp_dic[key] = value
 
         lens.append(len(flow_dic))
-        for key, value in flow_dic.items():
-           aggflows.append(value)
+
 
         t = t + epoch_length
     #for l in lens:
