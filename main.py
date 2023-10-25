@@ -300,10 +300,10 @@ def mytest():
         #for key in flow_dic.keys():
         #    print("flow dic:", flow_dic.get(key, 0), "tmp dic:", tmp_dic.get(key, 0))
 
-        fluctuation_dict = {}
-        for key in flow_dic:
-            if key in tmp_dic:
-                fluctuation_dict[key] = flow_dic[key] - tmp_dic[key]
+        # fluctuation_dict = {}
+        # for key in flow_dic:
+        #     if key in tmp_dic:
+        #         fluctuation_dict[key] = flow_dic[key] - tmp_dic[key]
 
     
         #if counter == 1:
