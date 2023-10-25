@@ -262,11 +262,12 @@ def mytest():
     t = 0
     end_time = sim_time + t
     count = 0
-    epoch_length = 5
+    epoch_length = 1
     lens = []
     all_epochs_flucs = []
     tmp_dic = {}
     counter = 1
+    aggflows = []
     while(t <= end_time):
         flow_dic = {}
         diff = {}
@@ -327,8 +328,8 @@ def mytest():
             tmp_dic[key] = value
 
         lens.append(len(flow_dic))
-        #for key, value in flow_dic.items():
-        #    aggflows.append(value)
+        for key, value in flow_dic.items():
+           aggflows.append(value)
 
         t = t + epoch_length
     #for l in lens:
@@ -353,11 +354,11 @@ def mytest():
 
 
 
-    #print("number of epochs:", count) 
-    #plt.bar(range(len(aggflows)), aggflows)
-    #plt.xlabel("epoch #")
-    #plt.ylabel("aggregate flow size of an OD path (bytes)")
-    #plt.show()
+    print("number of epochs:", count) 
+    # plt.bar(range(len(aggflows)), aggflows)
+    # plt.xlabel("epoch #")
+    # plt.ylabel("aggregate flow size of an OD path (bytes)")
+    # plt.show()
     #for v in aggflows:
     #    print(v)
     #print(len(aggflows))
