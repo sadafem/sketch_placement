@@ -222,7 +222,7 @@ def mytest():
     #st = time.time()
     load = 0.8
     sim_time = 20
-    epoch_length = 1
+    epoch_length = 4
     bandwidth = "1G"
     G = nx.Graph()
     FatTreeTopo(G)
@@ -267,7 +267,8 @@ def mytest():
     all_epochs_flucs = []
     tmp_dic = {}
     counter = 1
-    aggflows = []
+    aggflows = {tuple([]): []}
+
     while(t <= end_time):
         flow_dic = {}
         diff = {}
@@ -296,9 +297,13 @@ def mytest():
                 #print("4", "arrival:", f.arrival_time, "finish:", f.finish_time, "size:", f.size)
                 flow_dic[fp] = tmp + epoch_length / (f.finish_time - f.arrival_time)
                 
-        
+        print(count)
         for key, value in flow_dic.items():
-           aggflows.append(value)
+            if key in aggflows.keys():
+                aggflows[key].append(value)
+            else:
+                aggflows[key] = []
+                aggflows[key].append(value)
         
         
         
@@ -315,7 +320,7 @@ def mytest():
 
     
         #if counter == 1:
-        decision_vars, failure = place_sketch(flow_dic)
+        #decision_vars, failure = place_sketch(flow_dic)
             #print("number of flows in first epoch", len(flow_dic))
         #else:
             #print("number of flows in next epochs", len(flow_dic))
@@ -323,17 +328,17 @@ def mytest():
             
         #greedy(flow_dic)
         #counter += 1
-        failures.append(failure)
+        #failures.append(failure)
         #
         #break
         #diffs = {key: flow_dic.get(key, 0) - tmp_dic.get(key, 0) for key in set(flow_dic) | set(tmp_dic)}
         #for k, v in diffs.items():
         #    print("diff", v)
         #flucs = list(diffs.values())
-        flucs = [abs(ele) for ele in list(fluctuation_dict.values())]
-        all_epochs_flucs.append(flucs)
-        for key, value in flow_dic.items():
-            tmp_dic[key] = value
+        #flucs = [abs(ele) for ele in list(fluctuation_dict.values())]
+        #all_epochs_flucs.append(flucs)
+        #for key, value in flow_dic.items():
+        #    tmp_dic[key] = value
 
         lens.append(len(flow_dic))
 
@@ -341,12 +346,14 @@ def mytest():
         t = t + epoch_length
     #for l in lens:
     #    print("flow dic length", l)
-
+    #print(aggflows)
+    #decision_vars, failure = place_sketch(aggflows)
+    average_calc(aggflows)
     #print("flucccccccccc size", len(all_epochs_flucs))
     
     #sample_epoch = [element for sublist in all_epochs_flucs[1:-1] for element in sublist]
     #print("sample epoch len", len(sample_epoch))
-    print("failuresssss:", failures)
+    #print("failuresssss:", failures)
 
 
     # x = np.sort(sample_epoch)
@@ -362,10 +369,10 @@ def mytest():
 
 
     print("number of epochs:", count) 
-    # plt.bar(range(len(aggflows)), aggflows)
-    # plt.xlabel("epoch #")
-    # plt.ylabel("aggregate flow size of an OD path (bytes)")
-    # plt.show()
+    plt.bar(range(len(aggflows)), aggflows.values())
+    plt.xlabel("epoch #")
+    plt.ylabel("aggregate flow size of an OD path (bytes)")
+    plt.show()
     #for v in aggflows:
     #    print(v)
     #print(len(aggflows))

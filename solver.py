@@ -5,29 +5,81 @@ import math
 from scipy.stats import norm
 import json
 
-HASH_CAPACITY = 1785714000
+HASH_CAPACITY = 17857140000
 #we construct rate fluctuation here	
-def fluc_func(size):
-	mu = size # mean
-	sigma = 0.6 * mu #0.3 mean / 0.6 mean / 0.9 mean # standard deviation
-	#actual_size = mean + variance
-	actual_size = np.random.normal(mu, sigma)
-	return mu, sigma, actual_size
+# def fluc_func(size):
+# 	mu = size # mean
+# 	sigma = 0.9 * mu #0.3 mean / 0.6 mean / 0.9 mean # standard deviation
+# 	#actual_size = mean + variance
+# 	actual_size = np.random.normal(mu, sigma)
+# 	return mu, sigma, actual_size
+
+def average_calc(aggflows):
+    averages = []
+    variances = []
+    count = 0
+    for key, value in aggflows.items():
+        print(value)
+        if len(value) > 0 and not np.isnan(np.sum(value)):
+            value_np = np.array(value)
+            print("length of bobo", len(value_np))
+            averages.append(np.mean(value_np))
+            variances.append(np.std(value_np))
+            #place_sketch(aggflows, averages[key], variances[key])
+
+        #print("Variance:", variances[key])
+    print("aggflow size", len(aggflows))    
+    print("length of averages", len(averages))
+    print("length of variances", averages)
+    #print("Averages:", averages)
+    #print("Variances:", variances) 
+    print("hiiii")
+    #aggflows.popitem()
+    #aggflows.popitem()
+    #min_length = min(len(lst) for lst in aggflows.values())
+    min_length = min(len(lst) for lst in (lst[1:] for lst in aggflows.values() if len(lst) > 1))
+    max_length = max(len(lst) for lst in (lst[1:] for lst in aggflows.values() if len(lst) > 1))
+    print(min_length)
+    print(max_length)
+
+    for i in range(min_length):
+        actual_sizes = [lst[i] for lst in aggflows.values() if i < len(lst)]
+        print(len(actual_sizes))
+
+        #print("actual sizes", actual_sizes)
+    actual_sizess = [lst[0] for lst in aggflows.values() if 0 < len(lst)]
+    second_epoch_sizes = [lst[2] for lst in aggflows.values() if 2 < len(lst)]
+    place_sketch(aggflows, actual_sizess, second_epoch_sizes, averages, variances)
+    #check_feasibility(aggflows, second_epoch_sizes, averages, variances, var)
+
 
 
 #flow_dic contains a dictionary( key:OD path  value:flow sizes )
-def place_sketch(flow_dic):
+def place_sketch(flow_dic, actual_sizes, actual_sizes2, means, sigmas):
+    
     N = 0.7
-    actual_sizes = []
-    means = []
-    sigmas = []
+    #actual_sizes = []
+    #means = []
+    #sigmas = []
     abs_err = 1000
     num_of_ods = len(flow_dic)
-    for size in flow_dic.values():
-        mu, sigma, actual_size = fluc_func(size)
-        actual_sizes.append(actual_size)
-        means.append(mu)
-        sigmas.append(sigma)
+    #mu = mean
+    #sigma = variance
+
+    #min_length = min(len(lst) for lst in flow_dic.values())
+
+    # for i in range(min_length):
+    #     actual_sizes = [value[i] for value in flow_dic.values()]
+    #     print("actual sizes", actual_sizes)
+
+
+    # for items in flow_dic.values():
+    #     for item in items:
+    #         actual_size
+    #     mu, sigma, actual_size = fluc_func(size)
+    #     #actual_sizes.append(actual_size)
+    #     means.append(mu)
+    #     sigmas.append(sigma)
 
     devices_set = set()
     for od in flow_dic.keys():
@@ -61,6 +113,9 @@ def place_sketch(flow_dic):
     # Memory Constraint: For all devices.
     # Sketch_sizes has the memory requirement of each sketch
     sketch_sizes = dict()
+    print("num_of_ods", num_of_ods)
+    print("actual sizes", len(actual_sizes))
+    num_of_ods = num_of_ods - 1
     for i in range(num_of_ods):
         epsilon = abs_err/actual_sizes[i]
         width = math.ceil(math.e/epsilon)
@@ -86,23 +141,23 @@ def place_sketch(flow_dic):
             ) <= 1
         )
     # Hashing Capacity Constraint
-    w = 0
-    for d in devices:
-        m.addConstr(
-            gp.quicksum(
-                x_var[j, w] * 3 * (actual_sizes[j]/5) for j in range(num_of_ods)
-            ) <= HASH_CAPACITY
-        )
-        w += 1
-
-    # #Linearized Deterministic Robust Constraint
-    # cdf_inv = norm.ppf(N)
     # w = 0
     # for d in devices:
-    #    m.addConstr(
-    #        gp.quicksum(x_var[j, w] * 3 * means[j]/5 for j in range(num_of_ods)) + cdf_inv * gp.quicksum(x_var[j, w] * 3 * sigmas[j]/5 for j in range(num_of_ods)) <= HASH_CAPACITY
-    #    )
-    #    w += 1
+    #     m.addConstr(
+    #         gp.quicksum(
+    #             x_var[j, w] * 3 * (actual_sizes[j]/5) for j in range(num_of_ods)
+    #         ) <= HASH_CAPACITY
+    #     )
+    #     w += 1
+
+    #Linearized Deterministic Robust Constraint
+    cdf_inv = norm.ppf(N)
+    w = 0
+    for d in devices:
+       m.addConstr(
+           gp.quicksum(x_var[j, w] * 3 * means[j]/5 for j in range(num_of_ods)) + cdf_inv * gp.quicksum(x_var[j, w] * 3 * sigmas[j]/5 for j in range(num_of_ods)) <= HASH_CAPACITY
+       )
+       w += 1
     #m.addConstr(sum(rf[i]* alpha * x[i, s] for i in in_path) + cdf_inv * sum(math.sqrt(varf[i])* alpha * x[i, s] for i in in_path)<= B[s])
 
     # Set objective function
@@ -135,14 +190,48 @@ def place_sketch(flow_dic):
     print("Number of palcement failures:", num_of_ods - m.objVal)
     print("Percent of failures:", (num_of_ods - m.objVal)/num_of_ods)
     print("-------------------------------------------------------")
+    print(type(x_var))
+    m2 = gp.Model("fixed_variable_model")
+    xx_var = dict()
+    for j in range(num_of_ods):
+        for w in range(len(devices)):
+            xx_var[j, w] = m2.addVar(vtype=gp.GRB.BINARY, name=f'xx_{j}_{w}', lb=x_var[j,w].X, ub=x_var[j,w].X)
+
+    print("bbbbbbb")         
+    #return x_var
+
+#def check_feasibility(flow_dic, actual_sizes, means, sigmas, x_var):
+    abs_err = 1000
+    num_of_ods = len(flow_dic)
+    devices_set = set()
+    for od in flow_dic.keys():
+        for device in od:
+            devices_set.add(device)
+    devices = list(devices_set)
+    #for d in devices:
+        #print(d.name)
+
+    print("number of devices", len(devices))
+
 
     m2 = gp.Model("fixed_variable_model")
 
     xx_var = dict()
     for j in range(num_of_ods):
         for w in range(len(devices)):
-            xx_var[j, w] = m2.addVar(vtype=gp.GRB.BINARY, name=f'xx_{j}_{w}', lb=x_var[j,w].X, ub=x_var[j,w].X)
+            xx_var[j, w] = m2.addVar(vtype=gp.GRB.BINARY, name=f'xx_{j}_{w}', lb=x_var[j,w].x, ub=x_var[j,w].x)
 
+    sketch_sizes = dict()
+    print("num_of_ods", num_of_ods)
+    print("actual sizes", len(actual_sizes2))
+    num_of_ods = num_of_ods - 1
+    for i in range(num_of_ods):
+        epsilon = abs_err/actual_sizes2[i]
+        width = math.ceil(math.e/epsilon)
+        delta = 0.05
+        num_of_regs = math.ceil(math.log(1/delta))
+        sketch_sizes[i] = num_of_regs * width * 4
+        print("sketch size", sketch_sizes[i])
     w = 0
     for d in devices:
         m2.addConstr(
@@ -165,7 +254,7 @@ def place_sketch(flow_dic):
     for d in devices:
         m2.addConstr(
             gp.quicksum(
-                xx_var[j, w] * 3 * (np.random.normal(means[j], sigmas[j])/5) for j in range(num_of_ods)
+                xx_var[j, w] * 3 * (actual_sizes2[j]/5) for j in range(num_of_ods)
             ) <= HASH_CAPACITY
         )
         w += 1        
@@ -183,7 +272,7 @@ def place_sketch(flow_dic):
     else:
         print("The model is feasible")
 
-    return decision_vars, (num_of_ods - m.objVal)/num_of_ods
+    # return decision_vars, (num_of_ods - m.objVal)/num_of_ods
     #for v in m.getVars():
     #    print(f"{v.varName} = {v.x}")    
 
