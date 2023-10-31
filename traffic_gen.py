@@ -122,8 +122,10 @@ def traffic_gen(G, load, time, bw):
 		sys.exit(0)
 
 	avg = customRand.getAvg()
-	avg_inter_arrival = 1/(bandwidth*load/8./avg)*1000000000
-	#print(avg_inter_arrival)
+	avg_inter_arrival = 1/(bandwidth*load/8./avg)*1000000000 #nanosecond
+	#BandwidthLoad/8Avg: This portion of the formula appears to represent the rate at which data is being transmitted. 
+	#Bandwidth is the available data transmission rate, Load is the percentage of that bandwidth being used, and Avg represents the average size of data packets.
+	print("avg_inter_arrival", avg_inter_arrival)
 	flow_id = 1
 	flows = []
 	hosts = []
@@ -167,7 +169,7 @@ def traffic_gen(G, load, time, bw):
 
 	#flows.sort(key = lambda x: x.arrival_time)
 	all_sps = None
-	return flows
+	return avg_inter_arrival, flows
 	#for i in range(nhost):
 	#	t = base_t
 	#	while True:

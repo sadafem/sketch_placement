@@ -30,21 +30,22 @@ def average_calc(aggflows):
         #print("Variance:", variances[key])
     print("aggflow size", len(aggflows))    
     print("length of averages", len(averages))
-    print("length of variances", averages)
+    #print("length of variances", averages)
     #print("Averages:", averages)
     #print("Variances:", variances) 
     print("hiiii")
     #aggflows.popitem()
     #aggflows.popitem()
     #min_length = min(len(lst) for lst in aggflows.values())
-    min_length = min(len(lst) for lst in (lst[1:] for lst in aggflows.values() if len(lst) > 1))
+    min_length = min(len(lst) for lst in aggflows.values())
+
     max_length = max(len(lst) for lst in (lst[1:] for lst in aggflows.values() if len(lst) > 1))
     print(min_length)
     print(max_length)
 
-    for i in range(min_length):
-        actual_sizes = [lst[i] for lst in aggflows.values() if i < len(lst)]
-        print(len(actual_sizes))
+    # for i in range(min_length):
+    #     actual_sizes = [lst[i] for lst in aggflows.values() if i < len(lst)]
+    #     print(len(actual_sizes))
 
         #print("actual sizes", actual_sizes)
     actual_sizess = [lst[0] for lst in aggflows.values() if 0 < len(lst)]
@@ -117,7 +118,8 @@ def place_sketch(flow_dic, actual_sizes, actual_sizes2, means, sigmas):
     print("actual sizes", len(actual_sizes))
     num_of_ods = num_of_ods - 1
     for i in range(num_of_ods):
-        epsilon = abs_err/actual_sizes[i]
+        #epsilon = abs_err/actual_sizes[i] #we fix the epsilon
+        epsilon = 0.01
         width = math.ceil(math.e/epsilon)
         delta = 0.05
         num_of_regs = math.ceil(math.log(1/delta))
@@ -141,23 +143,23 @@ def place_sketch(flow_dic, actual_sizes, actual_sizes2, means, sigmas):
             ) <= 1
         )
     # Hashing Capacity Constraint
-    # w = 0
-    # for d in devices:
-    #     m.addConstr(
-    #         gp.quicksum(
-    #             x_var[j, w] * 3 * (actual_sizes[j]/5) for j in range(num_of_ods)
-    #         ) <= HASH_CAPACITY
-    #     )
-    #     w += 1
-
-    #Linearized Deterministic Robust Constraint
-    cdf_inv = norm.ppf(N)
     w = 0
     for d in devices:
-       m.addConstr(
-           gp.quicksum(x_var[j, w] * 3 * means[j]/5 for j in range(num_of_ods)) + cdf_inv * gp.quicksum(x_var[j, w] * 3 * sigmas[j]/5 for j in range(num_of_ods)) <= HASH_CAPACITY
-       )
-       w += 1
+        m.addConstr(
+            gp.quicksum(
+                x_var[j, w] * 3 * (actual_sizes[j]) for j in range(num_of_ods)
+            ) <= HASH_CAPACITY
+        )
+        w += 1
+
+    #Linearized Deterministic Robust Constraint
+    # cdf_inv = norm.ppf(N)
+    # w = 0
+    # for d in devices:
+    #    m.addConstr(
+    #        gp.quicksum(x_var[j, w] * 3 * means[j]/5 for j in range(num_of_ods)) + cdf_inv * gp.quicksum(x_var[j, w] * 3 * sigmas[j]/5 for j in range(num_of_ods)) <= HASH_CAPACITY
+    #    )
+    #    w += 1
     #m.addConstr(sum(rf[i]* alpha * x[i, s] for i in in_path) + cdf_inv * sum(math.sqrt(varf[i])* alpha * x[i, s] for i in in_path)<= B[s])
 
     # Set objective function
@@ -226,12 +228,13 @@ def place_sketch(flow_dic, actual_sizes, actual_sizes2, means, sigmas):
     print("actual sizes", len(actual_sizes2))
     num_of_ods = num_of_ods - 1
     for i in range(num_of_ods):
-        epsilon = abs_err/actual_sizes2[i]
+        #epsilon = abs_err/actual_sizes2[i]
+        epsilon = 0.01
         width = math.ceil(math.e/epsilon)
         delta = 0.05
         num_of_regs = math.ceil(math.log(1/delta))
         sketch_sizes[i] = num_of_regs * width * 4
-        print("sketch size", sketch_sizes[i])
+        #print("sketch size", sketch_sizes[i])
     w = 0
     for d in devices:
         m2.addConstr(

@@ -220,16 +220,17 @@ def translate_bandwidth(b):
     
 def mytest():
     #st = time.time()
-    load = 0.8
-    sim_time = 20
-    epoch_length = 4
+    load = 0.6
+    sim_time = 10
+    #epoch_length = avg_inter_arrival
     bandwidth = "1G"
     G = nx.Graph()
     FatTreeTopo(G)
     bw = translate_bandwidth(bandwidth)
     ft = FinishTime(G, bw)
     flows = list()
-    flows = traffic_gen(G, load, sim_time, bandwidth)
+    avg_inter_arrival, flows = traffic_gen(G, load, sim_time, bandwidth)
+    epoch_length = 0.01
     print("flows length", len(flows))
     # for key, value in flow_dic.items():
     #     print("key:", key, "value:", value)
@@ -368,11 +369,11 @@ def mytest():
 
 
 
-    print("number of epochs:", count) 
-    plt.bar(range(len(aggflows)), aggflows.values())
-    plt.xlabel("epoch #")
-    plt.ylabel("aggregate flow size of an OD path (bytes)")
-    plt.show()
+    #print("number of epochs:", count) 
+    #plt.bar(range(len(aggflows)), aggflows.values())
+    #plt.xlabel("epoch #")
+    #plt.ylabel("aggregate flow size of an OD path (bytes)")
+    #plt.show()
     #for v in aggflows:
     #    print(v)
     #print(len(aggflows))
