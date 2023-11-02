@@ -220,7 +220,7 @@ def translate_bandwidth(b):
     
 def mytest():
     #st = time.time()
-    load = 0.6
+    load = 0.8
     sim_time = 10
     #epoch_length = avg_inter_arrival
     bandwidth = "1G"
@@ -230,7 +230,8 @@ def mytest():
     ft = FinishTime(G, bw)
     flows = list()
     avg_inter_arrival, flows = traffic_gen(G, load, sim_time, bandwidth)
-    epoch_length = 0.01
+    
+    epoch_length = 1
     print("flows length", len(flows))
     # for key, value in flow_dic.items():
     #     print("key:", key, "value:", value)
@@ -240,6 +241,8 @@ def mytest():
     #print(len(flows))
     f_sizes = []
     f_durations = []
+    for f in flows:
+        print("src:", f.src.name, "dst:", f.dst.name, "Arrival:", f.arrival_time, "Finish:", f.finish_time, "Size:", f.size, "Duration:", f.finish_time - f.arrival_time)
     for f in flows:
         f_sizes.append(f.size)
         #print("flow size", f.size)
@@ -349,7 +352,7 @@ def mytest():
     #    print("flow dic length", l)
     #print(aggflows)
     #decision_vars, failure = place_sketch(aggflows)
-    average_calc(aggflows)
+    average_calc(aggflows, epoch_length)
     #print("flucccccccccc size", len(all_epochs_flucs))
     
     #sample_epoch = [element for sublist in all_epochs_flucs[1:-1] for element in sublist]

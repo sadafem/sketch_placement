@@ -5,7 +5,7 @@ import math
 from scipy.stats import norm
 import json
 
-HASH_CAPACITY = 17857140000
+HASH_CAPACITY = 1785714000
 #we construct rate fluctuation here	
 # def fluc_func(size):
 # 	mu = size # mean
@@ -14,7 +14,7 @@ HASH_CAPACITY = 17857140000
 # 	actual_size = np.random.normal(mu, sigma)
 # 	return mu, sigma, actual_size
 
-def average_calc(aggflows):
+def average_calc(aggflows, epoch_length):
     averages = []
     variances = []
     count = 0
@@ -28,7 +28,7 @@ def average_calc(aggflows):
             #place_sketch(aggflows, averages[key], variances[key])
 
         #print("Variance:", variances[key])
-    print("aggflow size", len(aggflows))    
+    print("aggflow size", len(aggflows))
     print("length of averages", len(averages))
     #print("length of variances", averages)
     #print("Averages:", averages)
@@ -50,19 +50,21 @@ def average_calc(aggflows):
         #print("actual sizes", actual_sizes)
     actual_sizess = [lst[0] for lst in aggflows.values() if 0 < len(lst)]
     second_epoch_sizes = [lst[2] for lst in aggflows.values() if 2 < len(lst)]
-    place_sketch(aggflows, actual_sizess, second_epoch_sizes, averages, variances)
-    #check_feasibility(aggflows, second_epoch_sizes, averages, variances, var)
+    print("actual sizes length", len(actual_sizess))
+    print("second epoch sizes", len(second_epoch_sizes))
+    var = place_sketch(aggflows, actual_sizess, second_epoch_sizes, averages, variances, epoch_length)
+    check_feasibility(aggflows, second_epoch_sizes, averages, variances, var, epoch_length)
 
 
 
 #flow_dic contains a dictionary( key:OD path  value:flow sizes )
-def place_sketch(flow_dic, actual_sizes, actual_sizes2, means, sigmas):
+def place_sketch(flow_dic, actual_sizes, actual_sizes2, means, sigmas, epoch_length):
     
     N = 0.7
     #actual_sizes = []
     #means = []
     #sigmas = []
-    abs_err = 1000
+    #abs_err = 1000
     num_of_ods = len(flow_dic)
     #mu = mean
     #sigma = variance
@@ -147,7 +149,7 @@ def place_sketch(flow_dic, actual_sizes, actual_sizes2, means, sigmas):
     for d in devices:
         m.addConstr(
             gp.quicksum(
-                x_var[j, w] * 3 * (actual_sizes[j]) for j in range(num_of_ods)
+                x_var[j, w] * 3 * (actual_sizes[j]/epoch_length) for j in range(num_of_ods)
             ) <= HASH_CAPACITY
         )
         w += 1
@@ -157,7 +159,7 @@ def place_sketch(flow_dic, actual_sizes, actual_sizes2, means, sigmas):
     # w = 0
     # for d in devices:
     #    m.addConstr(
-    #        gp.quicksum(x_var[j, w] * 3 * means[j]/5 for j in range(num_of_ods)) + cdf_inv * gp.quicksum(x_var[j, w] * 3 * sigmas[j]/5 for j in range(num_of_ods)) <= HASH_CAPACITY
+    #        gp.quicksum(x_var[j, w] * 3 * means[j]/epoch_length for j in range(num_of_ods)) + cdf_inv * gp.quicksum(x_var[j, w] * 3 * sigmas[j]/epoch_length for j in range(num_of_ods)) <= HASH_CAPACITY
     #    )
     #    w += 1
     #m.addConstr(sum(rf[i]* alpha * x[i, s] for i in in_path) + cdf_inv * sum(math.sqrt(varf[i])* alpha * x[i, s] for i in in_path)<= B[s])
@@ -177,7 +179,6 @@ def place_sketch(flow_dic, actual_sizes, actual_sizes2, means, sigmas):
     #print(x_var[1,1])
 
     #decision_vars = {v.varName: v.X for v in m.getVars()}
-    decision_vars = x_var
     #with open('data.json', 'w') as f:
     #    json.dump(decision_vars, f)
 
@@ -193,17 +194,22 @@ def place_sketch(flow_dic, actual_sizes, actual_sizes2, means, sigmas):
     print("Percent of failures:", (num_of_ods - m.objVal)/num_of_ods)
     print("-------------------------------------------------------")
     print(type(x_var))
-    m2 = gp.Model("fixed_variable_model")
-    xx_var = dict()
+    # m2 = gp.Model("fixed_variable_model")
+    # xx_var = dict()
+    # for j in range(num_of_ods):
+    #     for w in range(len(devices)):
+    #         xx_var[j, w] = m2.addVar(vtype=gp.GRB.BINARY, name=f'xx_{j}_{w}', lb=x_var[j,w].X, ub=x_var[j,w].X)
+
+    # print("bbbbbbb")         
+    #return x_var
+    var = {}
     for j in range(num_of_ods):
         for w in range(len(devices)):
-            xx_var[j, w] = m2.addVar(vtype=gp.GRB.BINARY, name=f'xx_{j}_{w}', lb=x_var[j,w].X, ub=x_var[j,w].X)
+            var[j,w] = x_var[j,w].X
+    #print(var)
+    return var
 
-    print("bbbbbbb")         
-    #return x_var
-
-#def check_feasibility(flow_dic, actual_sizes, means, sigmas, x_var):
-    abs_err = 1000
+def check_feasibility(flow_dic, actual_sizes, means, sigmas, var, epoch_length):
     num_of_ods = len(flow_dic)
     devices_set = set()
     for od in flow_dic.keys():
@@ -221,11 +227,12 @@ def place_sketch(flow_dic, actual_sizes, actual_sizes2, means, sigmas):
     xx_var = dict()
     for j in range(num_of_ods):
         for w in range(len(devices)):
-            xx_var[j, w] = m2.addVar(vtype=gp.GRB.BINARY, name=f'xx_{j}_{w}', lb=x_var[j,w].x, ub=x_var[j,w].x)
+            #print(j, w)
+            xx_var[j, w] = m2.addVar(vtype=gp.GRB.BINARY, name=f'xx_{j}_{w}', lb=var[j,w], ub=var[j,w])
 
     sketch_sizes = dict()
     print("num_of_ods", num_of_ods)
-    print("actual sizes", len(actual_sizes2))
+    print("actual sizes", len(actual_sizes))
     num_of_ods = num_of_ods - 1
     for i in range(num_of_ods):
         #epsilon = abs_err/actual_sizes2[i]
@@ -257,7 +264,7 @@ def place_sketch(flow_dic, actual_sizes, actual_sizes2, means, sigmas):
     for d in devices:
         m2.addConstr(
             gp.quicksum(
-                xx_var[j, w] * 3 * (actual_sizes2[j]/5) for j in range(num_of_ods)
+                xx_var[j, w] * 3 * (actual_sizes[j]/epoch_length) for j in range(num_of_ods)
             ) <= HASH_CAPACITY
         )
         w += 1        
