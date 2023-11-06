@@ -50,11 +50,16 @@ def average_calc(aggflows, epoch_length):
         #print("actual sizes", actual_sizes)
     actual_sizess = [lst[0] for lst in aggflows.values() if 0 < len(lst)]
     second_epoch_sizes = [lst[2] for lst in aggflows.values() if 2 < len(lst)]
+    third_epoch_sizes = [lst[3] for lst in aggflows.values() if 3 < len(lst)]
+    fourth_epoch_sizes = [lst[4] for lst in aggflows.values() if 4 < len(lst)]
     print("actual sizes length", len(actual_sizess))
     print("second epoch sizes", len(second_epoch_sizes))
+    counter = 0
     var = place_sketch(aggflows, actual_sizess, second_epoch_sizes, averages, variances, epoch_length)
     check_feasibility(aggflows, second_epoch_sizes, averages, variances, var, epoch_length)
-
+    check_feasibility(aggflows, third_epoch_sizes, averages, variances, var, epoch_length)
+    check_feasibility(aggflows, fourth_epoch_sizes, averages, variances, var, epoch_length)
+    #print(counter)
 
 
 #flow_dic contains a dictionary( key:OD path  value:flow sizes )
@@ -223,7 +228,8 @@ def check_feasibility(flow_dic, actual_sizes, means, sigmas, var, epoch_length):
 
 
     m2 = gp.Model("fixed_variable_model")
-
+    print("number of ods", num_of_ods)
+    num_of_ods = num_of_ods - 1
     xx_var = dict()
     for j in range(num_of_ods):
         for w in range(len(devices)):
@@ -233,7 +239,6 @@ def check_feasibility(flow_dic, actual_sizes, means, sigmas, var, epoch_length):
     sketch_sizes = dict()
     print("num_of_ods", num_of_ods)
     print("actual sizes", len(actual_sizes))
-    num_of_ods = num_of_ods - 1
     for i in range(num_of_ods):
         #epsilon = abs_err/actual_sizes2[i]
         epsilon = 0.01
@@ -279,6 +284,7 @@ def check_feasibility(flow_dic, actual_sizes, means, sigmas, var, epoch_length):
     m2.optimize()
     if m2.status == GRB.Status.INFEASIBLE:
         print("The model is infeasible")
+        #counter += 1
     else:
         print("The model is feasible")
 
