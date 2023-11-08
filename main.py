@@ -231,7 +231,7 @@ def mytest():
     flows = list()
     avg_inter_arrival, flows = traffic_gen(G, load, sim_time, bandwidth)
     
-    epoch_length = 2
+    epoch_length = 1
     print("flows length", len(flows))
     # for key, value in flow_dic.items():
     #     print("key:", key, "value:", value)
@@ -303,6 +303,7 @@ def mytest():
                 
         print(count)
         for key, value in flow_dic.items():
+            #print("flow_dic", key, value)
             if key in aggflows.keys():
                 aggflows[key].append(value)
             else:
