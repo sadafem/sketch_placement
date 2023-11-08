@@ -5,7 +5,7 @@ import math
 from scipy.stats import norm
 import json
 
-HASH_CAPACITY = 1785714000
+HASH_CAPACITY = 17857140000
 #we construct rate fluctuation here	
 # def fluc_func(size):
 # 	mu = size # mean
@@ -21,8 +21,8 @@ def average_calc(aggflows, epoch_length):
     for key, value in aggflows.items():
         if len(value) > 0 and not np.isnan(np.sum(value)):
             value_np = np.array(value)
-            print("length of flow sizes (number of epochs):", len(value_np))
-            print(value)
+            #print("length of flow sizes (number of epochs):", len(value_np))
+            #print(value)
             averages.append(np.mean(value_np))
             variances.append(np.std(value_np))
             #place_sketch(aggflows, averages[key], variances[key])
@@ -42,12 +42,19 @@ def average_calc(aggflows, epoch_length):
 
     max_length = max(len(lst) for lst in (lst for lst in aggflows.values() if len(lst) > 1))
 
-    for key, value in aggflows.items():
-        print(key, value)
+    # for key, value in aggflows.items():
+    #     print(key, value)
 
 
-    print(second_min_length)
-    print(max_length)
+    dict_items = list(aggflows.items())
+
+    # Check if the dictionary is not empty
+    if dict_items:
+        # Remove the first element from the list
+        removed_item = dict_items.pop(0)
+
+        # Convert the modified list back to a dictionary (if needed)
+        aggflows = dict(dict_items)
 
     # for i in range(min_length):
     #     actual_sizes = [lst[i] for lst in aggflows.values() if i < len(lst)]
@@ -60,9 +67,9 @@ def average_calc(aggflows, epoch_length):
     fourth_epoch_sizes = [lst[3] for lst in aggflows.values() if 3 < len(lst)]
     fifth_epoch_sizes = [lst[4] for lst in aggflows.values() if 4 < len(lst)]
     sixth_epoch_sizes = [lst[5] for lst in aggflows.values() if 5 < len(lst)]
-    #seventh_epoch_sizes = [lst[6] for lst in aggflows.values() if 6 < len(lst)]
-    #eighth_epoch_sizes = [lst[7] for lst in aggflows.values() if 7 < len(lst)]
-    #ninth_epoch_sizes = [lst[8] for lst in aggflows.values() if 8 < len(lst)]
+    seventh_epoch_sizes = [lst[6] for lst in aggflows.values() if 6 < len(lst)]
+    eighth_epoch_sizes = [lst[7] for lst in aggflows.values() if 7 < len(lst)]
+    ninth_epoch_sizes = [lst[8] for lst in aggflows.values() if 8 < len(lst)]
 
     # actual_sizess = [lst[0] if len(lst) > 0 else 0 for lst in aggflows.values()]
     # second_epoch_sizes = [lst[1] if len(lst) > 1 else 0 for lst in aggflows.values()]
@@ -83,12 +90,12 @@ def average_calc(aggflows, epoch_length):
     print(len(sixth_epoch_sizes))
     #print(len(seventh_epoch_sizes))
     counter = 0
-    var = place_sketch(aggflows, actual_sizess, second_epoch_sizes, averages, variances, epoch_length)
+    var = place_sketch(aggflows, actual_sizess, averages, variances, epoch_length)
     counter = check_feasibility(aggflows, second_epoch_sizes, averages, variances, var, epoch_length, counter)
     counter = check_feasibility(aggflows, third_epoch_sizes, averages, variances, var, epoch_length, counter)
     counter = check_feasibility(aggflows, fourth_epoch_sizes, averages, variances, var, epoch_length, counter)
     counter = check_feasibility(aggflows, fifth_epoch_sizes, averages, variances, var, epoch_length, counter)
-    counter = check_feasibility(aggflows, sixth_epoch_sizes, averages, variances, var, epoch_length, counter)
+    #counter = check_feasibility(aggflows, sixth_epoch_sizes, averages, variances, var, epoch_length, counter)
     #counter = check_feasibility(aggflows, seventh_epoch_sizes, averages, variances, var, epoch_length, counter)
     #counter = check_feasibility(aggflows, eighth_epoch_sizes, averages, variances, var, epoch_length, counter)
     #counter = check_feasibility(aggflows, ninth_epoch_sizes, averages, variances, var, epoch_length, counter)
@@ -97,7 +104,7 @@ def average_calc(aggflows, epoch_length):
 
 
 #flow_dic contains a dictionary( key:OD path  value:flow sizes )
-def place_sketch(flow_dic, actual_sizes, actual_sizes2, means, sigmas, epoch_length):
+def place_sketch(flow_dic, actual_sizes, means, sigmas, epoch_length):
     
     N = 0.6
     #actual_sizes = []
@@ -157,7 +164,7 @@ def place_sketch(flow_dic, actual_sizes, actual_sizes2, means, sigmas, epoch_len
     sketch_sizes = dict()
     print("num_of_ods", num_of_ods)
     print("actual sizes", len(actual_sizes))
-    num_of_ods = num_of_ods - 1
+
     for i in range(num_of_ods):
         #epsilon = abs_err/actual_sizes[i] #we fix the epsilon
         epsilon = 0.01
@@ -184,23 +191,23 @@ def place_sketch(flow_dic, actual_sizes, actual_sizes2, means, sigmas, epoch_len
             ) <= 1
         )
     # Hashing Capacity Constraint
-    # w = 0
-    # for d in devices:
-    #     m.addConstr(
-    #         gp.quicksum(
-    #             x_var[j, w] * 3 * (actual_sizes[j]/epoch_length) for j in range(num_of_ods)
-    #         ) <= HASH_CAPACITY
-    #     )
-    #     w += 1
-
-    #Linearized Deterministic Robust Constraint
-    cdf_inv = norm.ppf(N)
     w = 0
     for d in devices:
-       m.addConstr(
-           gp.quicksum(x_var[j, w] * 3 * means[j]/epoch_length for j in range(num_of_ods)) + cdf_inv * gp.quicksum(x_var[j, w] * 3 * sigmas[j]/epoch_length for j in range(num_of_ods)) <= HASH_CAPACITY
-       )
-       w += 1
+        m.addConstr(
+            gp.quicksum(
+                x_var[j, w] * 3 * (actual_sizes[j]/epoch_length) for j in range(num_of_ods)
+            ) <= HASH_CAPACITY
+        )
+        w += 1
+
+    #Linearized Deterministic Robust Constraint
+    # cdf_inv = norm.ppf(N)
+    # w = 0
+    # for d in devices:
+    #    m.addConstr(
+    #        gp.quicksum(x_var[j, w] * 3 * means[j]/epoch_length for j in range(num_of_ods)) + cdf_inv * gp.quicksum(x_var[j, w] * 3 * sigmas[j]/epoch_length for j in range(num_of_ods)) <= HASH_CAPACITY
+    #    )
+    #    w += 1
     #m.addConstr(sum(rf[i]* alpha * x[i, s] for i in in_path) + cdf_inv * sum(math.sqrt(varf[i])* alpha * x[i, s] for i in in_path)<= B[s])
 
     # Set objective function

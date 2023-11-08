@@ -241,8 +241,8 @@ def mytest():
     #print(len(flows))
     f_sizes = []
     f_durations = []
-    for f in flows:
-        print("src:", f.src.name, "dst:", f.dst.name, "Arrival:", f.arrival_time, "Finish:", f.finish_time, "Size:", f.size, "Duration:", f.finish_time - f.arrival_time)
+    #for f in flows:
+    #    print("src:", f.src.name, "dst:", f.dst.name, "Arrival:", f.arrival_time, "Finish:", f.finish_time, "Size:", f.size, "Duration:", f.finish_time - f.arrival_time)
     for f in flows:
         f_sizes.append(f.size)
         #print("flow size", f.size)
@@ -287,17 +287,17 @@ def mytest():
                 tmp = flow_dic.get(fp)
             else:
                 tmp = 0
-            if f.arrival_time > t and f.arrival_time < t + epoch_length and f.finish_time < t + epoch_length:
+            if f.arrival_time >= t and f.arrival_time <= t + epoch_length and f.finish_time <= t + epoch_length:
                 flow_dic[fp] = tmp + f.size
                 #print("1", "arrival:", f.arrival_time, "finish:", f.finish_time, "size:", f.size)
                 #print("flow dic", flow_dic[fp])
-            if f.arrival_time > t and f.arrival_time < t + epoch_length and f.finish_time > t + epoch_length:
+            if f.arrival_time >= t and f.arrival_time <= t + epoch_length and f.finish_time >= t + epoch_length:
                 #print("2", "arrival:", f.arrival_time, "finish:", f.finish_time, "size:", f.size, f.size*(((t + epoch_length) - f.arrival_time)/(f.finish_time - f.arrival_time)))
                 flow_dic[fp] = tmp + f.size*(((t + epoch_length) - f.arrival_time)/(f.finish_time - f.arrival_time))
-            if f.arrival_time < t and f.finish_time > t and f.finish_time < t + epoch_length:
+            if f.arrival_time <= t and f.finish_time >= t and f.finish_time <= t + epoch_length:
                 #print("3", "arrival:", f.arrival_time, "finish:", f.finish_time, "size:", f.size, f.size * ((f.finish_time - t)/(f.finish_time - f.arrival_time)))
                 flow_dic[fp] = tmp + f.size * ((f.finish_time - t)/(f.finish_time - f.arrival_time))
-            if f.arrival_time < t and f.finish_time > t + epoch_length:
+            if f.arrival_time <= t and f.finish_time >= t + epoch_length:
                 #print("4", "arrival:", f.arrival_time, "finish:", f.finish_time, "size:", f.size)
                 flow_dic[fp] = tmp + epoch_length / (f.finish_time - f.arrival_time)
                 
