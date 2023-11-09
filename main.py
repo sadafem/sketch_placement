@@ -231,7 +231,7 @@ def mytest():
     flows = list()
     avg_inter_arrival, flows = traffic_gen(G, load, sim_time, bandwidth)
     
-    epoch_length = 1
+    epoch_length = 0.1
     print("flows length", len(flows))
     # for key, value in flow_dic.items():
     #     print("key:", key, "value:", value)

@@ -95,10 +95,10 @@ def average_calc(aggflows, epoch_length):
     counter = check_feasibility(aggflows, third_epoch_sizes, averages, variances, var, epoch_length, counter)
     counter = check_feasibility(aggflows, fourth_epoch_sizes, averages, variances, var, epoch_length, counter)
     counter = check_feasibility(aggflows, fifth_epoch_sizes, averages, variances, var, epoch_length, counter)
-    #counter = check_feasibility(aggflows, sixth_epoch_sizes, averages, variances, var, epoch_length, counter)
-    #counter = check_feasibility(aggflows, seventh_epoch_sizes, averages, variances, var, epoch_length, counter)
-    #counter = check_feasibility(aggflows, eighth_epoch_sizes, averages, variances, var, epoch_length, counter)
-    #counter = check_feasibility(aggflows, ninth_epoch_sizes, averages, variances, var, epoch_length, counter)
+    counter = check_feasibility(aggflows, sixth_epoch_sizes, averages, variances, var, epoch_length, counter)
+    counter = check_feasibility(aggflows, seventh_epoch_sizes, averages, variances, var, epoch_length, counter)
+    counter = check_feasibility(aggflows, eighth_epoch_sizes, averages, variances, var, epoch_length, counter)
+    counter = check_feasibility(aggflows, ninth_epoch_sizes, averages, variances, var, epoch_length, counter)
     
     print(counter)
 
@@ -106,7 +106,7 @@ def average_calc(aggflows, epoch_length):
 #flow_dic contains a dictionary( key:OD path  value:flow sizes )
 def place_sketch(flow_dic, actual_sizes, means, sigmas, epoch_length):
     
-    N = 0.6
+    N = 0.8
     #actual_sizes = []
     #means = []
     #sigmas = []
@@ -201,13 +201,13 @@ def place_sketch(flow_dic, actual_sizes, means, sigmas, epoch_length):
         w += 1
 
     #Linearized Deterministic Robust Constraint
-    # cdf_inv = norm.ppf(N)
-    # w = 0
-    # for d in devices:
-    #    m.addConstr(
-    #        gp.quicksum(x_var[j, w] * 3 * means[j]/epoch_length for j in range(num_of_ods)) + cdf_inv * gp.quicksum(x_var[j, w] * 3 * sigmas[j]/epoch_length for j in range(num_of_ods)) <= HASH_CAPACITY
-    #    )
-    #    w += 1
+    cdf_inv = norm.ppf(N)
+    w = 0
+    for d in devices:
+       m.addConstr(
+           gp.quicksum(x_var[j, w] * 3 * means[j]/epoch_length for j in range(num_of_ods)) + cdf_inv * gp.quicksum(x_var[j, w] * 3 * sigmas[j]/epoch_length for j in range(num_of_ods)) <= HASH_CAPACITY
+       )
+       w += 1
     #m.addConstr(sum(rf[i]* alpha * x[i, s] for i in in_path) + cdf_inv * sum(math.sqrt(varf[i])* alpha * x[i, s] for i in in_path)<= B[s])
 
     # Set objective function
