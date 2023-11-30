@@ -5,7 +5,7 @@ import math
 from scipy.stats import norm
 import json
 
-HASH_CAPACITY = 17857140000
+HASH_CAPACITY = 124999980000
 #we construct rate fluctuation here	
 # def fluc_func(size):
 # 	mu = size # mean
@@ -106,7 +106,7 @@ def average_calc(aggflows, epoch_length):
 #flow_dic contains a dictionary( key:OD path  value:flow sizes )
 def place_sketch(flow_dic, actual_sizes, means, sigmas, epoch_length):
     
-    N = 0.8
+    N = 5000
     #actual_sizes = []
     #means = []
     #sigmas = []
@@ -191,14 +191,14 @@ def place_sketch(flow_dic, actual_sizes, means, sigmas, epoch_length):
             ) <= 1
         )
     # Hashing Capacity Constraint
-    w = 0
-    for d in devices:
-        m.addConstr(
-            gp.quicksum(
-                x_var[j, w] * 3 * (actual_sizes[j]/epoch_length) for j in range(num_of_ods)
-            ) <= HASH_CAPACITY
-        )
-        w += 1
+    # w = 0
+    # for d in devices:
+    #     m.addConstr(
+    #         gp.quicksum(
+    #             x_var[j, w] * 3 * (actual_sizes[j]/epoch_length) for j in range(num_of_ods)
+    #         ) <= HASH_CAPACITY
+    #     )
+    #     w += 1
 
     #Linearized Deterministic Robust Constraint
     cdf_inv = norm.ppf(N)

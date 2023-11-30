@@ -51,6 +51,7 @@ class FinishTime:
         heapq.heappush(events, arrival_event)
         departeds = [set(), set()]
         cur_departed = 0
+        snapshots = []
         while len(events) > 0 or len(arrival_events) > 0:
             # ignore wrong departure events
             if len(events) > 0 and events[0].type == DEPARTURE and events[0].object.finish_time != events[0].value:
@@ -231,7 +232,7 @@ def mytest():
     flows = list()
     avg_inter_arrival, flows = traffic_gen(G, load, sim_time, bandwidth)
     
-    epoch_length = 0.1
+    epoch_length = 0.01
     print("flows length", len(flows))
     # for key, value in flow_dic.items():
     #     print("key:", key, "value:", value)
@@ -289,6 +290,7 @@ def mytest():
                 tmp = 0
             if f.arrival_time >= t and f.arrival_time <= t + epoch_length and f.finish_time <= t + epoch_length:
                 flow_dic[fp] = tmp + f.size
+                #print("bandwidth", f.prev_bw)
                 #print("1", "arrival:", f.arrival_time, "finish:", f.finish_time, "size:", f.size)
                 #print("flow dic", flow_dic[fp])
             if f.arrival_time >= t and f.arrival_time <= t + epoch_length and f.finish_time >= t + epoch_length:

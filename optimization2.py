@@ -5,14 +5,14 @@ import math
 from scipy.stats import norm
 import json
 
-HASH_CAPACITY = 1785714000
+HASH_CAPACITY = 107142840000
 
-def fluc_func(size):
-	mu = size # mean
-	sigma = 0.3*mu #0.3 mean / 0.6 mean / 0.9 mean # standard deviation
-	#actual_size = mean + variance
-	actual_size = np.random.normal(mu, sigma)
-	return mu, sigma, actual_size
+# def fluc_func(size):
+# 	mu = size # mean
+# 	sigma = 0.3*mu #0.3 mean / 0.6 mean / 0.9 mean # standard deviation
+# 	#actual_size = mean + variance
+# 	actual_size = np.random.normal(mu, sigma)
+# 	return mu, sigma, actual_size
     
 #decision_vars is a dectionary of decision variables from a solved optimization problem
 def check_feasibility(decision_vars, flow_dic):
@@ -20,7 +20,7 @@ def check_feasibility(decision_vars, flow_dic):
     # for key, value in decision_vars.items():
     #     print(f"{key}: {value}")
     x_var = decision_vars
-    N = 0.7
+    N = 0.1
     actual_sizes = []
     means = []
     sigmas = []
